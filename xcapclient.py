@@ -89,7 +89,7 @@ class HTTPRequest(urllib2.Request):
 # This means XCAPClient doesn't look into results of HTTP resuests.
 class HTTPConnectionWrapper(object):
 
-    def __init__(self, base_url, user, password, auth):
+    def __init__(self, base_url, user, password=None, auth=None):
         self.base_url = base_url
         if self.base_url[-1:]!='/':
             self.base_url += '/'
@@ -97,18 +97,21 @@ class HTTPConnectionWrapper(object):
         self.username, self.domain = user.split('@')
         self.password = password
 
-        self.authhandler = None
-        if password is not None:
-            if auth == 'basic':
-                self.authhandler = urllib2.HTTPBasicAuthHandler()
-            elif auth == "digest":
-                self.authhandler = urllib2.HTTPDigestAuthHandler()
-            else:
-                raise ValueError('Invalid auth: %r' % auth) # if auth==None, password must be also None
-            self.authhandler.add_password(self.domain, self.base_url, self.username, password)
-            self.opener = urllib2.build_opener(self.authhandler)
-        else:
-            self.opener = urllib2.build_opener()
+        handlers = []
+
+        def add_handler(klass):
+            handler = klass()
+            handler.add_password(self.domain, self.base_url, self.username, password)
+            handlers.append(handler)
+        
+        if auth == 'basic':
+            add_handler(urllib2.HTTPBasicAuthHandler)
+        elif auth == "digest":
+            add_handler(urllib2.HTTPDigestAuthHandler)
+        elif password is not None:
+            add_handler(urllib2.HTTPDigestAuthHandler)
+            add_handler(urllib2.HTTPBasicAuthHandler)
+        self.opener = urllib2.build_opener(*handlers)
 
     def request(self, method, path, headers=None, data=None):
         if path[:1]=='/':
