@@ -14,6 +14,7 @@ OPT_COMPLETE = '--print-completions'
 
 try:
     import os
+    import urllib2
     import optparse
     import traceback
     from StringIO import StringIO
@@ -24,14 +25,23 @@ try:
     # prevent application.configuration from installing its SimpleObserver
     # which prints to stdout all kinds of useless crap from twisted
     twistedlog.defaultObserver = None
+    # not using twisted anymore? remove it?
     
     from application.configuration import *
+
+    try:
+        from twisted.python.util import getPassword
+    except ImportError:
+        getPassword = raw_input    
+
     from xcapclient import *
 except:
     if OPT_COMPLETE in sys.argv[-2:]:
         sys.exit(1)
     else:
         raise
+
+CONFIG_FILE = '~/.xcapclient'
 
 # to guess app from /NODE-SELECTOR
 app_by_root_tag = {
@@ -64,25 +74,21 @@ class OptionParser_NoExit(optparse.OptionParser):
     def error(self, msg):
         raise ValueError(msg)
 
-class ServerConfig(ConfigSection):
-    _datatypes = {'root': lambda x: ServerConfig.root + x.split()}
-    root = []
-
 class User:
 
-    def __init__(self, uri):
-        user, self.domain = uri.split('@', 1)
-        if ':' in user:
-            self.username, self.password = user.split(':', 1)
-        else:
-            self.username = user
-            self.password = None
+    def __init__(self, username, domain=None, password=None):
+        self.username = username
+        self.domain = domain
+        self.password = password
 
     def __str__(self):
         if self.password is None:
             return '%s@%s' % (self.username, self.domain)
         else:
             return '%s:%s@%s' % (self.username, self.password, self.domain)
+
+    def __repr__(self):
+        return '%s(%r, %r, %r)' % (self.__class__.__name__, self.username, self.domain, self.password)
 
     def without_password(self):
         return '%s@%s' % (self.username, self.domain)
@@ -97,71 +103,81 @@ class Auth:
             return auth.lower()
 
 
-class ClientConfig(ConfigSection):
+class Account(ConfigSection):
     _datatypes = {
-        'user' : lambda x: ClientConfig.user + [User(y) for y in x.split()],
-        'auth' : Auth }
-    user = []
-    auth = 'basic'
+        'auth' : Auth,
+        'password' : str }
+    username = ''
+    password = None
+    domain = ''
+    auth = ''
+    xcap_root = ''
 
 def read_xcapclient_cfg():
-    client_config = ConfigFile(os.path.expanduser('~/.xcapclient'))
-    client_config.read_settings('Client', ClientConfig)
-    client_config.read_settings('Server', ServerConfig)
+    client_config = ConfigFile(os.path.expanduser(CONFIG_FILE))
+    client_config.read_settings('Account', Account)
+    #client_config.read_settings('Server', ServerConfig)
 
 def read_openxcap_cfg():
     # load local server's xcap-root as well
+    # XXX fix openxcap to allow port in xcap-root
     server_config = ConfigFile('/etc/openxcap/config.ini')
     server_config.read_settings('Server', ServerConfig)
 
 def read_cfg():
     read_xcapclient_cfg()
-    read_openxcap_cfg()
+    #read_openxcap_cfg()
 
 
 def setup_parser_client(parser):
 
     help = 'XCAP root'
-    if ServerConfig.root:
-        help += '; %s is default' % ServerConfig.root[0]
-        default = ServerConfig.root[0]
+
+    if Account.xcap_root:
+        help += '; default is %s' % Account.xcap_root
+        default = Account.xcap_root
     else:
         help += ', e.g. http://xcap.example.com/xcap-root'
         default = None
     parser.add_option("--root", help=help, default=default)
 
-    help = 'user id in format username[:password]@domain'
-    if ClientConfig.user:
-        help += ', %s is default' % ClientConfig.user[0]
-        default = ClientConfig.user[0]
-    else:
-        default = None
-    parser.add_option("--user", help=help, default=default)
+    help = 'username part of User ID (you can also provide domain and ' + \
+           'password here, using username[:password][@domain] format)'
+    if Account.username:
+        help += '; default is %s' % Account.username
+    parser.add_option('--username', default=Account.username, help=help)
 
-    help="authentification type, basic, digest or none; " + \
-         "%s is default when password is present, none when it's not" % ClientConfig.auth
+    help = 'password to use if authentication is required. If not supplied will be asked interactively' # XXX do it
+    if Account.password:
+        help += '; default is *****'
+    parser.add_option('--password', default=Account.password, help=help)
 
-    parser.add_option("--auth", help=help, default=ClientConfig.auth)
+    help = 'domain part of User ID'
+    if Account.domain:
+        help += '; default is %s' % Account.domain
+    parser.add_option('--domain',   default=Account.domain, help=help)
 
+    help="authentification type, basic, digest or none"
+    if Account.auth:
+         help += "; default is %s" % Account.auth
 
-def make_xcapclient(options, XCAPClient=XCAPClient):
-    return XCAPClient(options.root, options.user.without_password(),
-                      options.user.password, options.auth)
+    parser.add_option("--auth", help=help, default=Account.auth)
+
 
 def setup_parser(parser):
     help="Application Unique ID. There's no default value; however, it will be " + \
          "guessed from NODE-SELECTOR (when present) or from the input file (when action is PUT). " + \
-         "Known apps: %s." % ', '.join(apps)
+         "Known apps: %s" % ', '.join(apps)
     parser.add_option("--app", dest='app', help=help)
 
     setup_parser_client(parser)
 
-    parser.add_option("-i", dest='input',
-                      help="source file for the PUT request; <stdin> is default")
-    parser.add_option("-o", dest='output',
-                      help="output file for the server response (successful or rejected); <stdout> is default")
-    parser.add_option("-d", dest='debug', action='store_true', default=False,
-                      help="print whole http requests and replies to stderr")
+    parser.add_option("-i", dest='input_filename',
+                      help="source file for the PUT request; default is <stdin>")
+    parser.add_option("-o", dest='output_filename',
+                      help="output file for the server response (successful or rejected); default is <stdout>")
+    #parser.add_option("-d", dest='debug', action='store_true', default=False,
+    #                  help="print whole http requests and replies to stderr")
 
 def lxml_tag(tag):
     # for tags like '{namespace}tag'
@@ -271,10 +287,6 @@ def completion(result, argv, comp_cword):
 
     if argv[-1]=='--app':
         return add(*apps)
-    elif argv[-1]=='--root':
-        return add_quoted(*ServerConfig.root)
-    elif argv[-1]=='--user':
-        return add_quoted(*ClientConfig.user)
     elif argv[-1]=='--auth':
         return add('basic', 'digest', 'none')
     elif argv[-1]!='-d' and argv[-1][0]=='-':
@@ -286,12 +298,11 @@ def completion(result, argv, comp_cword):
         complete_options(parser)
         discard(*argv)
         discard('-h', '--help')
-        if options.input is not None:
+        if options.input_filename is not None:
             discard('-o', 'get', 'delete')
         return
 
-    if isinstance(options.user, basestring):
-        options.user = User(options.user)
+    options.user = User(options.username, options.domain, options.password)
 
     action, args = args[0], args[1:]
     action = action.lower()
@@ -465,13 +476,13 @@ class IndentedHelpFormatter(optparse.IndentedHelpFormatter):
 
 def check_options(options):
     if options.root is None:
-        sys.exit('Please specify XCAP root with --root. You can also put the default root in ~/.xcapclient.')
+        sys.exit('Please specify XCAP root with --root. You can also put the default root in %s.' % CONFIG_FILE)
 
-    if options.user is None:
-        sys.exit('Please specify userid with --user. You can also put the default userid in ~/.xcapclient.')
+    if options.user.username is None:
+        sys.exit('Please specify --username. You can also put the default username in %s.' % CONFIG_FILE)
 
-    if isinstance(options.user, basestring):
-        options.user = User(options.user)
+    if options.user.domain is None:
+        sys.exit('Please specify --domain. You can also put the default domain in %s.' % CONFIG_FILE)
 
 
 def parse_args():
@@ -484,6 +495,8 @@ def parse_args():
     parser = optparse.OptionParser(usage=__doc__, formatter=IndentedHelpFormatter())
     setup_parser(parser)
     options, args = parser.parse_args(argv)
+
+    options.user = User(options.username, options.domain, options.password)
 
     if not args:
         sys.exit('Please provide ACTION.')
@@ -498,17 +511,17 @@ def parse_args():
     options.input_data = None
 
     if action == 'put':
-        if options.input is None:
+        if options.input_filename is None:
             if hasattr(sys.stdin, 'isatty') and sys.stdin.isatty():
                 sys.stderr.write('Reading PUT body from stdin. Type CTRL-D when done\n')
             options.input_data = sys.stdin.read()
         else:
-            options.input_data = file(options.input).read()
+            options.input_data = file(options.input_filename).read()
 
-    if options.output is None:
+    if options.output_filename is None:
         options.output_file = sys.stdout
     else:
-        options.output_file = file(options.output, 'w+')
+        options.output_file = file(options.output_filename, 'w+')
 
     node_selector = None
 
@@ -527,11 +540,11 @@ def parse_args():
             root_tag = get_root_tag(options.input_data)
             if root_tag is None:
                 sys.exit('Please specify --app. Cannot extract root tag from document %r.' % \
-                         (options.input or '<stdin'))
+                         (options.input_filename or '<stdin'))
             options.app = get_app_by_input_root_tag(root_tag)
             if options.app is None:
                 sys.exit('Please specify --app. Root tag %r gives in the document %r gives no clue.' % \
-                         (root_tag, options.input))
+                         (root_tag, options.input_filename))
         else:
             sys.exit('Please specify --app or NODE-SELECTOR')
 
@@ -540,23 +553,42 @@ def parse_args():
 
     return options, action, node_selector
 
+def make_xcapclient(options, XCAPClient=XCAPClient):
+    return XCAPClient(options.root, options.user.without_password(),
+                      options.user.password, options.auth)
 
-def write_body(options, data, etag, print_zero_length=False):
-    if etag is not None:
-        sys.stderr.write('etag: %s\n' % etag)
-    if data or print_zero_length:
-        sys.stderr.write('content-length: %s\n' % len(data))
-    if data:
-        options.output_file.write(data)
-        options.output_file.flush()
-        if options.output: # i.e. not stdout
-            sys.stderr.write('%s bytes saved to %s\n' % (len(data), options.output))
+def write_etag(etag):
+    sys.stderr.write('etag: %s\n' % etag)
+
+def write_content_length(length):
+    sys.stderr.write('content-length: %s\n' % length)
+
+def write_body(options, data):
+    options.output_file.write(data)
+    options.output_file.flush()
+    if options.output_filename: # i.e. not stdout
+        sys.stderr.write('%s bytes saved to %s\n' % (len(data), options.output_filename))
+    else:
+        if data and data[-1]!='\n':
+            sys.stderr.write('\n')       
+
+def client_request(client, action, options, node_selector):
+    try:
+        if action == 'get':
+            return client.get(options.app, node_selector)
+        elif action == 'delete':
+            return client.delete(options.app, node_selector)
+        elif action == 'put':
+            return client.put(options.app, options.input_data, node_selector)
         else:
-            if data and data[-1]!='\n':
-                sys.stderr.write('\n')       
+            raise ValueError('Unknown action: %r' % action)
+    except HTTPError, ex:
+        return ex
+
+def interactive():
+    return hasattr(sys.stdin, 'isatty') and sys.stdin.isatty()
 
 def main():
-
     if OPT_COMPLETE in sys.argv[-2:]:
         return run_completion(OPT_COMPLETE)
     elif '--debug-completions' in sys.argv[-2:]:
@@ -566,22 +598,30 @@ def main():
     client = make_xcapclient(options)
     sys.stderr.write('url: %s\n' % client.get_url(options.app, node_selector))
 
-    try:
-        if action == 'get':
-            result = client.get(options.app, node_selector)
-        elif action == 'delete':
-            result = client.delete(options.app, node_selector)
-        elif action == 'put':
-            result = client.put(options.app, options.input_data, node_selector)
-    except HTTPError, ex:
-        result = ex
-
+    result = client_request(client, action, options, node_selector)
+    if isinstance(result, addinfourl) and result.code==401 and not options.user.password and interactive():
+        authreq = result.headers.get('www-authenticate')
+        if authreq:
+            mo = urllib2.AbstractBasicAuthHandler.rx.search(authreq)
+            if mo:
+                options.auth, realm = mo.groups()
+                sys.stderr.write('Server requested authentication, but no password was provided.\n')
+                options.password = getPassword('Password (realm=%s): ' % realm)
+                options.user = User(options.username, options.domain, options.password)
+                client = make_xcapclient(options)
+                result = client_request(client, action, options, node_selector)
     if isinstance(result, Resource):
-        write_body(options, result, result.etag, print_zero_length=True)
+        write_etag(result.etag)
+        write_content_length(len(result))
+        write_body(options, result)
         assert action == 'get', action
     elif isinstance(result, addinfourl):
         sys.stderr.write('%s %s\n' % (result.code, result.msg))
-        write_body(options, result.read(), result.headers.get('etag')) 
+        data = result.read()
+        write_content_length(len(data))
+        write_body(options, data)
+        if result not in [200, 201]:
+            sys.exit(1)
     else:
         sys.exit('%s: %s' % (result.__class__.__name__, result))
 

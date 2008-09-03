@@ -1,0 +1,8 @@
+# rename this file to '.xcapclient' and copy it to your homedir
+
+[Account]
+
+xcap_root = https://xcap.sipthor.net/xcap-root
+username = alice
+password = 123
+domain = example.com
