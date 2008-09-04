@@ -154,8 +154,7 @@ def setup_parser_client(parser):
         default = None
     parser.add_option("--xcap-root", help=help, default=default)
 
-    help = 'username part of User ID (you can also provide domain and ' + \
-           'password here, using username[:password][@domain] format)'
+    help = 'username part of User ID'
     if Account.username:
         help += '; default is %s' % Account.username
     parser.add_option('--username', default=Account.username, help=help)
