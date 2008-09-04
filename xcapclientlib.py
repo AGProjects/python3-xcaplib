@@ -94,6 +94,14 @@ class HTTPRequest(urllib2.Request):
     def get_method(self):
         return self.method
 
+def parse_etag_value(s):
+    if s is None:
+        return s
+    if len(s)>1 and s[0]=='"' and s[-1]=='"':
+        return s[1:-1]
+    else:
+        raise ValueError('Cannot parse etag header value: %r' % s)
+
 
 # XCAPClient uses HTTPConnectionWrapper-like class for HTTP handling.
 # if HTTPConnectionWrapper blocks, XCAPClient should blocks,
@@ -125,32 +133,41 @@ class HTTPConnectionWrapper(object):
             add_handler(urllib2.HTTPBasicAuthHandler)
         self.opener = urllib2.build_opener(*handlers)
 
-    def request(self, method, path, headers=None, data=None):
+    def request(self, method, path, headers=None, data=None, etag=None):
         if path[:1]=='/':
             path = path[1:]
         if headers==None:
             headers = {}
+        if etag is not None:
+            headers['If-Match'] = '"' + etag + '"'
         url = self.base_url+path
         req = HTTPRequest(url, method=method, headers=headers, data=data)
         try:
-            return self.opener.open(req)
+            response = self.opener.open(req)
+            response.etag = parse_etag_value(response.headers.get('etag'))
+            return response
             # contrary to what documentation for urllib2 says, this can return addinfourl
             # instead of HTTPError which is though has all the relevant attributes (code, msg etc)
         except HTTPError, e:
+            e.etag = parse_etag_value(e.headers.get('etag'))
             if 200 <= e.code <= 299:
                 return e
             raise
 
-    def get(self, path, headers=None, data=None):
-        response = self.request('GET', path, headers, data)
+    def get(self, path, headers=None, etag=None):
+        response = self.request('GET', path, headers, None, etag)
         if 200 <= response.code <= 299:
             content_type = response.headers.get('content-type')
             klass = Resource.get_class(content_type)
-            etag = response.headers.get('etag')
-            return klass(response.read(), etag)
+            return klass(response.read(), response.etag)
         else:
             raise response
 
+class Error(Exception):
+    pass
+
+class AlreadyExists(Error):
+    pass
 
 class XCAPClient(object):
 
@@ -177,28 +194,88 @@ class XCAPClient(object):
     def get_url(self, application, node):
         return (self.root or '') + self.get_path(application, node)
 
-    def get(self, application, node=None):
+    def get(self, application, node=None, etag=None):
         path = self.get_path(application, node)
-        return self.con.get(path)
+        return self.con.get(path, etag=etag)
 
-    def put(self, application, resource, node=None):
+    def put(self, application, resource, node=None, etag=None):
         path = self.get_path(application, node)
         headers = {}
         content_type = Resource.get_content_type(node)
         if content_type:
             headers['Content-Type'] = content_type
-        return self.con.request('PUT', path, headers, resource)
+        return self.con.request('PUT', path, headers, resource, etag=etag)
 
-    def delete(self, application, node=None):
+    def delete(self, application, node=None, etag=None):
         path = self.get_path(application, node)
-        return self.con.request('DELETE', path)
+        return self.con.request('DELETE', path, etag=etag)
+
+    def replace(self, application, resource, node=None, etag=None):
+        """check that the already exists. if so, PUT.
+        Return (old_resource, reply to PUT)
+        """
+        old = self.get(application, node, etag)
+        res = self.put(application, resource, node, old.etag)
+        return (old, res)
+
+    def insert_document(self, application, resource):
+        """check that the resource doesn't exists. if so, PUT.
+
+        Since 404 doesn't return ETag, it is not reliable (someone could
+        do PUT after our GET and we will replace the document, instead of inserting.
+        """
+        try:
+            self.get(application)
+        except HTTPError, ex:
+            if ex.code == 404:
+                # how to ensure insert?
+                # 1. make openxcap to supply fixed tag into 404, like ETag: "none"
+                # and understand If-Match: "none" as intent to insert.
+                # 2. If-None-Match: *, what does it do?
+                return self.put(application, resource)
+        else:
+            raise AlreadyExists
+
+    def insert(self, application, resource, node=None, etag=None, retries=5):
+        """check that the resource doesn't exists. if so, PUT.
+        1. Get the whole document. This is needed for etag.
+        2. If node supplied, check that that node doesn't exists (it
+           could be done locally, but we're doing it via another GET to
+           the server)
+        3. PUT the resource.
+        """
+        if node is None:
+            if etag is not None:
+                raise ValueError('Cannot PUT the document, reliably. Set etag to None')
+            return self.insert_document(application, resource)
+
+        while retries>=0:
+            retries -= 1
+            document = self.get(application, None, etag)
+            try:
+                element = self.get(application, node, document.etag)
+            except HTTPError, ex:
+                if etag is None and ex.code == 412:
+                    continue
+                elif ex.code == 404:
+                    try:
+                        return self.put(application, resource, node, document.etag)
+                    except HTTPError, ex:
+                        if etag is None and ex.code == 412:
+                            continue
+                        else:
+                            raise
+                else:
+                    raise
+        else:
+            raise AlreadyExists
 
 
 if __name__ == '__main__':
 
     root = 'http://127.0.0.1:8000'
     user = 'alice@example.com'
-    client = XCAPClient(root, user)
+    client = XCAPClient(root, user, password='123')
 
     document = file('resource-lists.xml').read()
 
@@ -219,20 +296,37 @@ if __name__ == '__main__':
     res = client.get('resource-lists', '/resource-lists/list/entry/@uri')
     assert res == 'sip:bill@example.com', res
 
-    # put an element
+    # element operations:
     bob_uri = 'sip:bob@example.com'
-    bob = '<entry uri="%s"/>' % bob_uri
     node_selector = '/resource-lists/list/entry[@uri="%s"]' % bob_uri
-    res = client.put('resource-lists', bob, node_selector)
+
+    # replace an element (when there isn't one)
+    bob1 = '<entry uri="%s"><display-name>The Bob</display-name></entry>' % bob_uri
+    try:
+        res = client.replace('resource-lists', bob1, node_selector)
+        assert False, 'should not get there'
+    except HTTPError, e:
+        if e.code != 404:
+            raise
+
+    # insert an element
+    bob2 = '<entry uri="%s"/>' % bob_uri
+    res = client.insert('resource-lists', bob2, node_selector, etag=res.etag)
     assert res.code == 201, (res.code, res)
 
-    # replace an element
-    bob = '<entry uri="%s"><display-name>The Bob</display-name></entry>' % bob_uri
-    res = client.put('resource-lists', bob, node_selector)
+    # insert an element (when there's already one)
+    try:
+        res = client.insert('resource-lists', bob2, node_selector)
+        assert False, `res`
+    except AlreadyExists:
+        pass
+
+    # replace an element, check etag by the way, it should be equal to that of last result
+    res = client.put('resource-lists', bob1, node_selector, etag=res.etag)
     assert res.code == 200, (res.code, res)
 
     # delete an element
-    res = client.delete('resource-lists', node_selector)
+    res = client.delete('resource-lists', node_selector, etag=res.etag)
     assert res.code == 200, (res.code, res)
 
     # common http errors:
@@ -240,7 +334,8 @@ if __name__ == '__main__':
         res = client.delete('resource-lists', node_selector)
         assert res.code == 200, (res.code, res)
     except HTTPError, e:
-        assert e.code == 404, e
+        if e.code != 404:
+            raise
 
     # connection errors:
     client2 = XCAPClient('http://www.fdsdfgh.com:32452', user)
@@ -256,3 +351,28 @@ if __name__ == '__main__':
     watchers = client3.get('watchers')
     assert isinstance(watchers, Document), `watchers`
     assert watchers.content_type == 'application/xml', watchers.content_type
+
+
+    # conditional GET:
+    client.put('resource-lists', document)
+    got = client.get('resource-lists')    
+    assert got==document, (document, got)
+    etag = got.etag
+    
+    got2 = client.get('resource-lists', etag=etag)
+    assert document==got2, (document, got2)
+
+    try:
+        got3 = client.get('resource-lists', etag=etag + 'xxx')
+        assert False, "should've gotten 412 error instead: %r" % got3
+    except HTTPError, e:
+        if e.code != 412:
+            raise
+
+    # conditional DELETE:
+    try:
+        res = client.delete('resource-lists', etag=etag+'yyy')
+        assert False, "should've gotten 412 error instead: %r" % res
+    except HTTPError, e:
+        if e.code != 412:
+            raise
