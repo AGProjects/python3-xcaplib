@@ -3,7 +3,7 @@
   %prog: manage XCAP documents
   %prog [OPTIONS] --app AUID ACTION [NODE-SELECTOR]
 
-  ACTION is an operation to perform: get, put or delete.
+  ACTION is an operation to perform: get, replace, insert, put or delete.
   Presence of NODE-SELECTOR indicates that action is to be performed on an
   element or an attribute.
 """
@@ -19,7 +19,7 @@ try:
     import traceback
     from StringIO import StringIO
     from xml.sax.saxutils import quoteattr
-    from lxml import etree; 
+    from lxml import etree
     from twisted.python import log as twistedlog
     
     # prevent application.configuration from installing its SimpleObserver
@@ -34,7 +34,8 @@ try:
     except ImportError:
         getPassword = raw_input    
 
-    from xcapclientlib import *
+    from xcaplib.client import *
+    from xcaplib.xpath_completion import *
 except:
     if OPT_COMPLETE in sys.argv[-2:]:
         sys.exit(1)
@@ -55,6 +56,8 @@ app_by_root_tag = {
 
 root_tags = ['/' + root_tag for root_tag in app_by_root_tag.keys()]
 del root_tag
+
+actions = ['get', 'put', 'delete', 'insert', 'replace']
 
 logfile = None
 #logfile = file('./xcapclient.log', 'a+')
@@ -112,10 +115,20 @@ class Account(ConfigSection):
     domain = ''
     auth = ''
     xcap_root = ''
+    _environ = { 'username'  : 'XCAP_USERNAME',
+                 'password'  : 'XCAP_PASSWORD',
+                 'domain'    : 'XCAP_DOMAIN',
+                 'xcap_root' : 'XCAP_ROOT' }
+    @classmethod
+    def load_from_environ(cls):
+        for item, env_key in cls._environ.items():
+            if env_key in os.environ:
+                setattr(cls, item, os.environ[env_key])
 
 def read_xcapclient_cfg():
     client_config = ConfigFile(os.path.expanduser(CONFIG_FILE))
     client_config.read_settings('Account', Account)
+    Account.load_from_environ()
     #client_config.read_settings('Server', ServerConfig)
 
 def read_openxcap_cfg():
@@ -139,7 +152,7 @@ def setup_parser_client(parser):
     else:
         help += ', e.g. https://xcap.example.com/xcap-root'
         default = None
-    parser.add_option("--root", help=help, default=default)
+    parser.add_option("--xcap-root", help=help, default=default)
 
     help = 'username part of User ID (you can also provide domain and ' + \
            'password here, using username[:password][@domain] format)'
@@ -276,7 +289,7 @@ def completion(result, argv, comp_cword):
         for option in parser.option_list:
             for opt in option._short_opts + option._long_opts:
                 add(opt)
-        add('put', 'get', 'delete')
+        add(*actions)
 
     read_cfg()
     parser = OptionParser_NoExit()
@@ -311,7 +324,7 @@ def completion(result, argv, comp_cword):
         return
 
     if options.app:
-        return add_quoted(*complete_xpath(options, options.app, current_unq))
+        return add_quoted(*complete_xpath(options, options.app, current_unq, action))
     else:
         try:
             root_tag, rest = current_unq[1:].split('/', 1)
@@ -323,7 +336,7 @@ def completion(result, argv, comp_cword):
             # get/delete: GET the document, get all the path
             # put: GET the document, get all the paths
             #      read input document, get all the insertion points
-            return add_quoted(*complete_xpath(options, app_by_root_tag[root_tag], current_unq))
+            return add_quoted(*complete_xpath(options, app_by_root_tag[root_tag], current_unq, action))
 
 
 def run_completion(option, raise_ex=False):
@@ -343,129 +356,19 @@ def run_completion(option, raise_ex=False):
             log(x)
             print x
 
-
-def fix_namespace_prefix(selector, prefix = 'default'):
-    if not selector:
-        return ''
-    steps = []
-    for step in selector.split('/'):
-        if not step or ':' in step[:step.find('[')]:
-            steps.append(step)
-        else:
-            steps.append(prefix + ':' + step)
-    return '/'.join(steps)
-
-def path_element((prefix, name)):
-    if prefix:
-        return prefix + ':' + name
-    else:
-        return name
-
-def enumerate_paths(document, selector_start):
-    log('enumerate_paths(%r, %r)', document[:10], selector_start)
-
-    rejected = set()
-    added = set()
-    def add(x):
-        if x in rejected:
-            return
-        if x in added:
-            added.discard(x)
-            rejected.add(x)
-        else:
-            added.add(x)
-    
-    x = selector_start.rfind('/')
-    parent, current = selector_start[:x], selector_start[x:]
-    xml = etree.parse(StringIO(document))
-    namespaces = xml.getroot().nsmap.copy()
-    namespaces['default'] = namespaces[None]
-    del namespaces[None]
-
-    log('parent=%r current=%r', parent, current)
-    
-    if not parent:
-        x = '/' + lxml_tag(xml.getroot().tag)[1]
-        return [x, x+'/']
-    else:
-        log('xpath argument: %s', fix_namespace_prefix(parent))
-        elements = xml.xpath(fix_namespace_prefix(parent), namespaces=namespaces)
-        log('xpath result: %s', elements)
-
-    if len(elements)!=1:
-        return []
-
-    prefixes = dict((v, k) for (k, v) in xml.getroot().nsmap.iteritems())
-    context = etree.iterwalk(elements[0], events=("start", "end"))
-    indices = {}
-    star_index = 0
-    it = iter(context)
-    the_element = it.next()
-    for (k, v) in the_element[1].attrib.items():
-        add(parent + '/@' + k)
-    
-    skip = 0
-
-    paths = []
-    has_children = False
-    
-    for action, elem in it:
-        log("%s %s", action, elem)
-        if action == 'start':
-            skip += 1
-            if skip==1:
-                has_children = False
-                star_index += 1
-                paths.append(parent + '/*[%s]' % star_index)
-                namespace, tag = lxml_tag(elem.tag)
-                log('namespace=%r prefixes=%r', namespace, prefixes)
-                prefix = prefixes[namespace]
-                el = path_element((prefix, tag))
-                indices.setdefault(el, 0)
-                indices[el]+=1
-                paths.append(parent + '/' + el)
-                paths.append(parent + '/' + el + '[%s]' % indices[el])
-                for (k, v) in elem.attrib.items():
-                    v = quoteattr(v)
-                    paths.append(parent + '/' + el + '[@%s=%s]' % (k, v))
-            else:
-                has_children = True
-        elif action == 'end':
-            if skip == 1:
-                for p in paths:
-                    add(p)
-                    if has_children:
-                        add(p + '/')
-                paths = []
-            skip -= 1
-
-    log('indices=%r', indices)
-    for (tag, index) in indices.iteritems():
-        if index == 1:
-            added.discard(parent + '/' + tag + '[1]')
-            added.discard(parent + '/' + tag + '[1]/')
-
-    if star_index == 1:
-        added.discard(parent + '/*[1]')
-        #added.add(parent + '/*')
-        if parent + '/*[1]/' in added:
-            added.discard(parent + '/*[1]/')
-            #added.add(parent + '/*/')
-
-    for x in added:
-        log('x=%r', x)
-
-    return added
-
-
-def complete_xpath(options, app, selector):
-    client = XCAPClient(options.root, options.user.without_password(),
+def complete_xpath(options, app, selector, action):
+    client = XCAPClient(options.xcap_root, options.user.without_password(),
                         options.user.password, options.auth)
 
     result = client.get(app)
 
     if isinstance(result, Resource):
-        return enumerate_paths(result, selector)
+        if action not in ['get', 'put', 'insert', 'replace']:
+            action = 'get'
+        if action == 'get':
+            return enum_paths_get(result, selector)
+        else:
+            return globals()['enum_paths_'+action+'_wfile'](result, selector, options.input_filename)
     return []
 
 
@@ -475,8 +378,8 @@ class IndentedHelpFormatter(optparse.IndentedHelpFormatter):
 
 
 def check_options(options):
-    if options.root is None:
-        sys.exit('Please specify XCAP root with --root. You can also put the default root in %s.' % CONFIG_FILE)
+    if options.xcap_root is None:
+        sys.exit('Please specify XCAP root with --xcap-root. You can also put the default root in %s.' % CONFIG_FILE)
 
     if options.user.username is None:
         sys.exit('Please specify --username. You can also put the default username in %s.' % CONFIG_FILE)
@@ -505,7 +408,7 @@ def parse_args():
     
     action, args = args[0], args[1:]
     action = action.lower()
-    if action not in ['get', 'put', 'delete']:
+    if action not in actions:
         sys.exit('ACTION must be either GET or PUT or DELETE.')
 
     options.input_data = None
@@ -536,8 +439,8 @@ def parse_args():
                 sys.exit('Please specify --app. Root tag %r gives no clue.' % root_tag)
 
     if not options.app:
-        if action == 'put':
-            root_tag = get_root_tag(options.input_data)
+        if action in ['put', 'replace', 'insert']:
+            root_tag = get_xml_info(options.input_data)[1]
             if root_tag is None:
                 sys.exit('Please specify --app. Cannot extract root tag from document %r.' % \
                          (options.input_filename or '<stdin'))
@@ -554,11 +457,12 @@ def parse_args():
     return options, action, node_selector
 
 def make_xcapclient(options, XCAPClient=XCAPClient):
-    return XCAPClient(options.root, options.user.without_password(),
+    return XCAPClient(options.xcap_root, options.user.without_password(),
                       options.user.password, options.auth)
 
 def write_etag(etag):
-    sys.stderr.write('etag: %s\n' % etag)
+    if etag:
+        sys.stderr.write('etag: %s\n' % etag)
 
 def write_content_length(length):
     sys.stderr.write('content-length: %s\n' % length)
@@ -574,12 +478,10 @@ def write_body(options, data):
 
 def client_request(client, action, options, node_selector):
     try:
-        if action == 'get':
-            return client.get(options.app, node_selector)
-        elif action == 'delete':
-            return client.delete(options.app, node_selector)
-        elif action == 'put':
-            return client.put(options.app, options.input_data, node_selector)
+        if action in ['get', 'delete']:
+            return getattr(client, action)(options.app, node_selector)
+        elif action in ['put', 'insert', 'replace']:
+            return getattr(client, action)(options.app, options.input_data, node_selector)
         else:
             raise ValueError('Unknown action: %r' % action)
     except HTTPError, ex:
@@ -618,8 +520,10 @@ def main():
     elif isinstance(result, addinfourl):
         sys.stderr.write('%s %s\n' % (result.code, result.msg))
         data = result.read()
-        write_content_length(len(data))
-        write_body(options, data)
+        write_etag(result.headers.get('etag'))
+        if data:
+            write_content_length(len(data))
+            write_body(options, data)
         if result not in [200, 201]:
             sys.exit(1)
     else:
