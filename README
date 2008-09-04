@@ -14,8 +14,8 @@ Installation
 2. For argument and node-selector bash completion:
    sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
 
-3. Install xcapclient.py into the executables search path
-   copy xcapclient.py to /usr/bin/xcapclient
+3. Install xcapclient into the executables search path copy xcapclient 
+   to /usr/bin/xcapclient
 
 
 Usage
