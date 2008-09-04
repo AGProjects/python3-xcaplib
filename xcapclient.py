@@ -137,7 +137,7 @@ def setup_parser_client(parser):
         help += '; default is %s' % Account.xcap_root
         default = Account.xcap_root
     else:
-        help += ', e.g. http://xcap.example.com/xcap-root'
+        help += ', e.g. https://xcap.example.com/xcap-root'
         default = None
     parser.add_option("--root", help=help, default=default)
 

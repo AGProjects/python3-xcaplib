@@ -14,8 +14,8 @@ Installation
 2. For argument and node-selector bash completion:
    sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
 
-3. install xcapclient.py into the executables search path
-   copy xcapclientapp.py to /usr/bin/xcapclient
+3. Install xcapclient.py into the executables search path
+   copy xcapclient.py to /usr/bin/xcapclient
 
 
 Usage
@@ -24,12 +24,23 @@ Usage
 The XCAP client allows you to manage documents on an XCAP server. The
 software has been tested against OpenXCAP server http://openxcap.org
 
+To test this script you can register a SIP SIMPLE account on
+http://sip2sip.info, which provides a fully functional OpenXCAP server.
+
+
 1. Operating on XCAP documents (full document handling)
 
   a. PUT
 
+
+  xcapclient --app pres-rules -i pres-rules.xml put
+
+  to put a a presence rules document or 
+
   xcapclient --app resource-lists -i resource-lists.xml put
 
+  to put a resource-lists document on the server.
+ 
   On success, the command prints '201 Created' if a new document was created on the
   server or '200 OK' if an existing document was replaced. You should something like this:
 
@@ -40,6 +51,10 @@ software has been tested against OpenXCAP server http://openxcap.org
   b. get
 
   xcapclient --app resource-lists get
+
+  or
+
+  xcapclient --app pres-rules get
 
   This will print the document you've just put, along with its tag.
 
@@ -80,3 +95,5 @@ software has been tested against OpenXCAP server http://openxcap.org
     etag: "bfbd38bed7163dd19e6e110d0dfa0876"
 
   This will shift Bill's entry to the second position.
+
+
