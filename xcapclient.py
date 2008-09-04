@@ -57,6 +57,18 @@ class Resource(str):
         else:
             return Element.content_type
 
+    def __eq__(self, other):
+        try:
+            return str.__eq__(self, other) and self.etag==other.etag and self.content_type==other.content_type
+        except AttributeError:
+            return True
+
+    def __ne__(self, other):
+        try:
+            return str.__ne__(self, other) or self.etag!=other.etag or self.content_type!=other.content_type
+        except AttributeError:
+            return False
+
 class Document(Resource):
     content_type = None # depends on the application
 
