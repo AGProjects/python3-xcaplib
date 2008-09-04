@@ -41,7 +41,7 @@ except:
     else:
         raise
 
-CONFIG_FILE = '~/.xcapclient'
+CONFIG_FILE = '~/xcapclient.ini'
 
 # to guess app from /NODE-SELECTOR
 app_by_root_tag = {
@@ -137,9 +137,9 @@ def setup_parser_client(parser):
         help += '; default is %s' % Account.xcap_root
         default = Account.xcap_root
     else:
-        help += ', e.g. http://xcap.example.com/xcap-root'
+        help += ', e.g. https://xcap.example.com/xcap-root'
         default = None
-    parser.add_option("--root", help=help, default=default)
+    parser.add_option("--xcap-root", help=help, default=default)
 
     help = 'username part of User ID (you can also provide domain and ' + \
            'password here, using username[:password][@domain] format)'
@@ -476,7 +476,7 @@ class IndentedHelpFormatter(optparse.IndentedHelpFormatter):
 
 def check_options(options):
     if options.root is None:
-        sys.exit('Please specify XCAP root with --root. You can also put the default root in %s.' % CONFIG_FILE)
+        sys.exit('Please specify XCAP root with --xcap_root. You can also put the default root in %s.' % CONFIG_FILE)
 
     if options.user.username is None:
         sys.exit('Please specify --username. You can also put the default username in %s.' % CONFIG_FILE)

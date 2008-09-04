@@ -2,7 +2,7 @@
 
 [Account]
 
-xcap_root = https://xcap.sipthor.net/xcap-root
+xcap_root = https://xcap.example.com/xcap-root
 username = alice
 password = 123
 domain = example.com
