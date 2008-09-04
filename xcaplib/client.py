@@ -277,7 +277,7 @@ if __name__ == '__main__':
     user = 'alice@example.com'
     client = XCAPClient(root, user, password='123')
 
-    document = file('resource-lists.xml').read()
+    document = file('../resource-lists.xml').read()
 
     # put the whole document
     client.put('resource-lists', document)
@@ -347,7 +347,7 @@ if __name__ == '__main__':
 
     # https and authentication:
     root = 'https://xcap.sipthor.net/xcap-root'
-    client3 = XCAPClient(root, 'poc@umts.ro', 'poc', auth='basic')
+    client3 = XCAPClient(root, 'alice@example.com', '1234', auth='basic')
     watchers = client3.get('watchers')
     assert isinstance(watchers, Document), `watchers`
     assert watchers.content_type == 'application/xml', watchers.content_type
