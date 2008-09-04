@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-  %prog: manage XCAP documents
+  %prog: Client for managing full or partial XML documents on XCAP servers (RFC 4825)
   %prog [OPTIONS] --app AUID ACTION [NODE-SELECTOR]
 
   ACTION is an operation to perform: get, replace, insert, put or delete.
