@@ -3,6 +3,13 @@ XCAP Client
 ===========
 
 
+Prerequisites
+-------------
+
+See the Prerequisites section of the INSTALL document for OpenXCAP server
+from http://openxcap.org
+
+
 Installation
 ------------
 
@@ -14,8 +21,9 @@ Installation
 2. For argument and node-selector bash completion:
    sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
 
-3. Install xcapclient into the executables search path copy xcapclient 
-   to /usr/bin/xcapclient
+3. Run 'python setup.py install' to install the software in the system 
+
+   Alternatively you can run xcapclient from its local directory.
 
 
 Usage
@@ -32,7 +40,6 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
   a. PUT
 
-
   xcapclient --app pres-rules -i pres-rules.xml put
 
   to put a a presence rules document or 
@@ -44,11 +51,11 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
   On success, the command prints '201 Created' if a new document was created on the
   server or '200 OK' if an existing document was replaced. You should something like this:
 
-    url: http://xcap.example.com/xcap-root/resource-lists/users/alice@example.com/index.xml
-    201 Created
-    etag: "856bdac9012ee28e46cebb81e51ac2a0"
+  url: http://xcap.example.com/xcap-root/resource-lists/users/alice@example.com/index.xml
+  201 Created
+  etag: "856bdac9012ee28e46cebb81e51ac2a0"
 
-  b. get
+  b. GET
 
   xcapclient --app resource-lists get
 
@@ -58,7 +65,7 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
   This will print the document you've just put, along with its tag.
 
-  c. delete
+  c. DELETE
 
   xcapclient --app resource-lists delete
 
@@ -74,8 +81,8 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
   xcapclient --app resource-lists get '/resource-lists/list[@name="friends"]/entry[1]/display-name'
 
-    etag: "856bdac9012ee28e46cebb81e51ac2a0"
-    <display-name>Bill Doe</display-name>
+  etag: "856bdac9012ee28e46cebb81e51ac2a0"
+  <display-name>Bill Doe</display-name>
 
   Specifying application with --app, is no longer necessary as it may be
   guessed from the node selector.
@@ -91,9 +98,8 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
   xcapclient -i alice.xml put '/resource-lists/list[@name="friends"]/entry[1][@uri="sip:alice@example.com"]'
 
-    201 Created
-    etag: "bfbd38bed7163dd19e6e110d0dfa0876"
+  201 Created
+  etag: "bfbd38bed7163dd19e6e110d0dfa0876"
 
   This will shift Bill's entry to the second position.
-
 
