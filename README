@@ -22,13 +22,11 @@ XCAP protocol allows a client to read, write, and modify application
 configuration data stored in XML format on a server. XCAP maps XML document
 sub-trees and element attributes to HTTP URIs, so that these components can
 be directly accessed by HTTP. An XCAP server is used by the XCAP clients to
-store data like Presence policy in combination with a SIP Presence server
-that supports PUBLISH/SUBSCRIBE/NOTIFY methods to provide a complete
-[http://www.tech-invite.com/Ti-sip-WGs.html#wg-simple SIP SIMPLE] server
-solution.
+store data like presence policy in combination with a SIP Presence server
+that supports PUBLISH/SUBSCRIBE/NOTIFY methods to provide a complete SIP
+SIMPLE solution.
 
-The XCAP client allows you to manage documents on the XCAP server. The
-software has been tested against OpenXCAP server http://openxcap.org
+The XCAP client allows for management of documents on the XCAP server. 
 
 
 Installation
@@ -53,7 +51,9 @@ OpenXCAP server from http://openxcap.org
 Usage
 -----
 
-To test this script you can register a SIP SIMPLE account on
+This software has been tested against OpenXCAP server http://openxcap.org
+
+To test this script you can also register a SIP SIMPLE account on
 http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
 
