@@ -57,7 +57,8 @@ app_by_root_tag = {
 root_tags = ['/' + root_tag for root_tag in app_by_root_tag.keys()]
 del root_tag
 
-actions = ['get', 'put', 'delete', 'insert', 'replace']
+update_actions = ['put', 'insert', 'replace']
+actions = ['get', 'delete'] + update_actions
 
 logfile = None
 #logfile = file('./xcapclient.log', 'a+')
@@ -362,12 +363,11 @@ def complete_xpath(options, app, selector, action):
     result = client.get(app)
 
     if isinstance(result, Resource):
-        if action not in ['get', 'put', 'insert', 'replace']:
-            action = 'get'
-        if action == 'get':
+        function = globals().get('enum_paths_'+action+'_wfile', enum_paths_get)
+        if function == enum_paths_get:
             return enum_paths_get(result, selector)
         else:
-            return globals()['enum_paths_'+action+'_wfile'](result, selector, options.input_filename)
+            return function(result, selector, options.input_filename)
     return []
 
 
@@ -415,7 +415,7 @@ def parse_args():
 
     options.input_data = None
 
-    if action == 'put':
+    if action in update_actions:
         if options.input_filename is None:
             if hasattr(sys.stdin, 'isatty') and sys.stdin.isatty():
                 sys.stderr.write('Reading PUT body from stdin. Type CTRL-D when done\n')
@@ -441,7 +441,7 @@ def parse_args():
                 sys.exit('Please specify --app. Root tag %r gives no clue.' % root_tag)
 
     if not options.app:
-        if action in ['put', 'replace', 'insert']:
+        if action in update_actions:
             root_tag = get_xml_info(options.input_data)[1]
             if root_tag is None:
                 sys.exit('Please specify --app. Cannot extract root tag from document %r.' % \
@@ -482,7 +482,7 @@ def client_request(client, action, options, node_selector):
     try:
         if action in ['get', 'delete']:
             return getattr(client, action)(options.app, node_selector)
-        elif action in ['put', 'insert', 'replace']:
+        elif action in update_actions:
             return getattr(client, action)(options.app, options.input_data, node_selector)
         else:
             raise ValueError('Unknown action: %r' % action)
