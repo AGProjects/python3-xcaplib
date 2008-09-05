@@ -372,6 +372,9 @@ def complete_xpath(options, app, selector, action):
 
 
 class IndentedHelpFormatter(optparse.IndentedHelpFormatter):
+    def __init__(self):
+        optparse.IndentedHelpFormatter.__init__(self, max_help_position=25)
+
     def format_usage(self, usage):
         return usage
 
