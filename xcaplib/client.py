@@ -346,7 +346,7 @@ if __name__ == '__main__':
         pass
 
     # https and authentication:
-    root = 'https://xcap.sipthor.net/xcap-root'
+    root = 'https://xcap.example.com/xcap-root'
     client3 = XCAPClient(root, 'alice@example.com', '1234', auth='basic')
     watchers = client3.get('watchers')
     assert isinstance(watchers, Document), `watchers`
