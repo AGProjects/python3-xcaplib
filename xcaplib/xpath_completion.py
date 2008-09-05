@@ -59,71 +59,49 @@ def path_element((prefix, name)):
     else:
         return name
 
-def xpath(document, selector_start):
-    xml = etree.parse(StringIO(document))
-    return xpath_xml(xml, selector_start)
-
-def xpath_xml(xml, selector_start, rec_limit=2):
-    rec_limit -= 1
-    if rec_limit<0:
-        return
+def get_parent(selector_start):
+    """
+    >>> get_parent('/resource-lists')
+    ''
+    >>> get_parent('/resource-lists/')
+    '/resource-lists'
+    """
     x = selector_start.rfind('/')
-    parent, current = selector_start[:x], selector_start[x:]
+    return selector_start[:x]
+
+def calc_prefixes(xml):
+    return dict((v, k) for (k, v) in xml.getroot().nsmap.iteritems())
+
+def xpath(xml, parent):
     namespaces = xml.getroot().nsmap.copy()
     namespaces['default'] = namespaces[None]
     del namespaces[None]
 
-    log('parent=%r current=%r', parent, current)
-    
-    if not parent:
-        return xpath_xml(xml, '/' + lxml_tag(xml.getroot().tag)[1] + '/')
-    else:
-        log('xpath argument: %s', fix_namespace_prefix(parent))
-        elements = xml.xpath(fix_namespace_prefix(parent), namespaces=namespaces)
-        log('xpath result: %s', elements)
+    log('xpath argument: %s', fix_namespace_prefix(parent))
+    elements = xml.xpath(fix_namespace_prefix(parent), namespaces=namespaces)
+    log('xpath result: %s', elements)
 
     assert len(elements)==1, elements
+    return elements[0]
 
-    prefixes = dict((v, k) for (k, v) in xml.getroot().nsmap.iteritems())
-    return parent, elements[0], prefixes
-
-
-def enumerate_paths(document, selector_start):
-    log('enumerate_paths(%r, %r)', document[:10], selector_start)
-
-    #rejected = set()
+def enumerate_paths(element, prefixes):
     added = set()
 
     def add(key):
         added.add(key)
-#         if key in rejected:
-#             return
-#         if key in added:
-#             added.discard(key)
-#             rejected.add(key)
-#         else:
-#             added.add(key)
     indices = {}
     star_index = 0
 
-    xpath_result = xpath(document, selector_start)
-    if isinstance(xpath_result, basestring):
-        parent = ''
-        add(('element', xpath_result, None, None, True))
-        it = []
-    else:
-        parent, element, prefixes = xpath_result
-        context = etree.iterwalk(element, events=("start", "end"))
-        it = iter(context)
-        the_element = it.next()
-        for (k, v) in the_element[1].attrib.items():
-            #add(parent + '/@' + k)
-            add(('parent-attr', k))
-    
-        skip = 0
+    context = etree.iterwalk(element, events=("start", "end"))
+    it = iter(context)
+    the_element = it.next()
+    for (k, v) in the_element[1].attrib.items():
+        add(('parent-attr', k))
 
-        paths = []
-        has_children = False
+    skip = 0
+
+    paths = []
+    has_children = False
     
     for action, elem in it:
         log("%s %s", action, elem)
@@ -141,7 +119,6 @@ def enumerate_paths(document, selector_start):
                 indices[el]+=1
                 paths.append((el, None, None))
                 paths.append((el, indices[el], None))
-                
                 for (k, v) in elem.attrib.items():
                     paths.append((el, None, (k, v)))
             else:
@@ -159,7 +136,7 @@ def enumerate_paths(document, selector_start):
     for x in added:
         log('x=%r', x)
 
-    return parent, added, indices, star_index
+    return added, indices, star_index
 
 def discard_longer(added, indices, star_index):
     "if there's exists both entry and entry[1] and no more entries, discard the latter"
@@ -193,13 +170,21 @@ def element2xpath(parent, tag, position, att_test):
         s += '[@%s=%s]' % (k, quoteattr(v))
     return s
 
-
 def enum_paths_get(document, selector_start):
-    parent, added, indices, star_index = enumerate_paths(document, selector_start)
+    res = []
+    xml = etree.parse(StringIO(document))
+    parent = get_parent(selector_start)
+    if not parent:
+        root_tag = lxml_tag(xml.getroot().tag)[1]
+        res.append('/' + root_tag)
+        res.append('/' + root_tag + '/')
+        return res
+    element = xpath(xml, parent)
+    prefixes = calc_prefixes(xml)
+    added, indices, star_index = enumerate_paths(element, prefixes)
     discard_longer(added, indices, star_index)
     discard_ambigous(added, indices, star_index)
-    
-    res = []
+
     for x in added:
         if x[0]=='parent-attr':
             res.append(parent + '/@' + x[1])
@@ -215,11 +200,29 @@ def enum_paths_get(document, selector_start):
 
 def enum_paths_replace(document, selector_start, my_tag, my_attrs):
     if my_tag is None:
+        # no input element provided, you may try to replace anything you can get
         return enum_paths_get(document, selector_start)
-    parent, added, indices, star_index = enumerate_paths(document, selector_start)
+    res = []
+    xml = etree.parse(StringIO(document))
+    parent = get_parent(selector_start)
+    if not parent:
+        root_tag = lxml_tag(xml.getroot().tag)[1]
+        res.append('/' + root_tag + '/')
+        if my_tag == root_tag:
+            # assuming root tags never have attributes
+            res.append('/' + root_tag)
+        if len(res)>1:
+            return res
+        else:
+            # having only one variant will make bash think the completion is done
+            parent = '/' + root_tag
+
+    element = xpath(xml, parent)       
+    prefixes = calc_prefixes(xml)
+    added, indices, star_index = enumerate_paths(element, prefixes)
     discard_longer(added, indices, star_index)
     discard_ambigous(added, indices, star_index)   
-    res = []
+
     for x in added:
         if x[0]=='element':
             tag, position, att_test, has_children = x[1:]
@@ -235,42 +238,52 @@ def enum_paths_replace(document, selector_start, my_tag, my_attrs):
                         res.append(s)
     return res
 
-def enum_paths_replace_wfile(document, selector_start, input_filename):
-    return enum_paths_replace(document, selector_start, *get_xml_info(input_filename))
-
 def enum_paths_insert(document, selector_start, my_tag, my_attrs):
-    parent, added, indices, star_index = enumerate_paths(document, selector_start)
-    discard_longer(added, indices, star_index)
-    discard_ambigous(added, indices, star_index)
-    parents = []
     res = set()
+    xml = etree.parse(StringIO(document))
+    parent = get_parent(selector_start)
+    if not parent:
+        root_tag = lxml_tag(xml.getroot().tag)[1]
+        res.add('/' + root_tag + '/')
+        if my_tag == root_tag:
+            # assuming root tags never have attributes
+            res.add('/' + root_tag)
+        if len(res)>1:
+            return res
+        else:
+            # having only one variant will make bash think the completion is done
+            parent = '/' + root_tag
+    element = xpath(xml, parent)
+    prefixes = calc_prefixes(xml)
+    added, indices, star_index = enumerate_paths(element, prefixes)
+    discard_longer(added, indices, star_index)
+    discard_ambigous(added, indices, star_index)   
     max_position = 0
     for x in added:
         if x[0]=='element':
             tag, position, att_test, has_children = x[1:]
             s = element2xpath(parent, tag, position, att_test)
             if has_children:
-                parents.append(s + '/')
+                res.add(s + '/')
             if tag == my_tag or my_tag is None:
                 max_position = max(max_position, position or 1)
                 if not att_test:
                     for (k, v) in my_attrs.items():
-                        if res is not None:
-                            res.add(element2xpath(parent, tag, position, (k, v)))
+                        res.add(element2xpath(parent, tag, position, (k, v)))
                 else:
                     k, v = att_test
                     if my_attrs.get(k)==v:
                         # there's already an item with @k==v, remove this attr from my_attrs and restart
                         del my_attrs[k]
                         return enum_paths_insert(document, selector_start, my_tag, my_attrs)
-    if res is None:
-        return parents
-    else:
-        if my_tag:
-            for (k, v) in my_attrs.items():
-                res.add(element2xpath(parent, my_tag, None, (k, v)))
-                res.add(element2xpath(parent, my_tag, max_position+1, (k, v)))
-        return parents + list(res)
+    if parent and my_tag:
+        for (k, v) in my_attrs.items():
+            res.add(element2xpath(parent, my_tag, None, (k, v)))
+            res.add(element2xpath(parent, my_tag, max_position+1, (k, v)))
+    return res
+
+def enum_paths_replace_wfile(document, selector_start, input_filename):
+    return enum_paths_replace(document, selector_start, *get_xml_info(input_filename))
 
 def enum_paths_insert_wfile(document, selector_start, input_filename):
     return enum_paths_insert(document, selector_start, *get_xml_info(input_filename))
@@ -278,7 +291,8 @@ def enum_paths_insert_wfile(document, selector_start, input_filename):
 def enum_paths_put(document, selector_start, my_tag, my_attrs):
     x1 = enum_paths_replace(document, selector_start, my_tag, my_attrs)
     x2 = enum_paths_insert(document, selector_start, my_tag, my_attrs)
-    return x1+x2
+    x1.extend(x2)
+    return x1
 
 def enum_paths_put_wfile(document, selector_start, input_filename):
     return enum_paths_put(document, selector_start, *get_xml_info(input_filename))
@@ -357,6 +371,9 @@ class _test:
             '/resource-lists/list/entry[@uri="sip:bill@example.com"]'])
         assert result == expected, result
 
+        result = self.enum_path_get('')
+        assert result == ['/resource-lists', '/resource-lists/'], result
+
     def test_replace(self):
         result = self.enum_path_replace('/resource-lists/list/list/', 'entry', {'uri' : 'sip:nancy@example.com'})
         expected = sorted([
@@ -392,6 +409,15 @@ class _test:
         for x, y in zip(result, expected):
             assert x == y, (x, y)
         assert result == expected, result
+
+        result = self.enum_path_replace('', 'entry', {'uri' : 'sip:jack@example.com'})
+        # this request should return '/resource-lists/'
+        # However, single completion would make bash think that's the whole node is completed
+        # that's why when completion function returns only one variant it reruns with the result
+        # as new node-selector and merges the results of two runs
+        assert result == ['/resource-lists/',      # first run result
+                          '/resource-lists/list/', # second run result
+                          '/resource-lists/list[@name="friends"]/'], result # second run result
 
     def test_insert(self):
         result = self.enum_path_insert('/resource-lists/list/list/', 'entry', {'uri' : 'sip:nancy@example.com'})
@@ -429,9 +455,22 @@ class _test:
         for x, y in zip(result, expected):
             assert x == y, (x, y)
         assert result==expected, result
-        
+
+        result = self.enum_path_insert('', 'entry', {'uri' : 'sip:jack@example.com'})
+        assert result == ['/resource-lists/', # same as with replace
+                          '/resource-lists/entry[1][@uri="sip:jack@example.com"]', # specific to insert
+                          '/resource-lists/entry[@uri="sip:jack@example.com"]', # specific to insert
+                          '/resource-lists/list/', # same as with replace
+                          '/resource-lists/list[@name="friends"]/'] # same as with replace
+
+        result = self.enum_path_insert('', None, {})
+        assert result == ['/resource-lists/', # same as with replace
+                          '/resource-lists/list/', # same as with replace
+                          '/resource-lists/list[@name="friends"]/'] # same as with replace
 
 if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
     t = _test()
     t.test_get()
     t.test_replace()
