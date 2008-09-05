@@ -268,5 +268,5 @@ class XCAPClient(object):
                             raise
                 else:
                     raise
-        else:
-            raise AlreadyExists
+            else:
+                raise AlreadyExists
