@@ -433,7 +433,7 @@ def parse_args():
     if args:
         node_selector, args = args[0], args[1:]
         if node_selector[0]!='/':
-            node_selector = '/' + node_selector
+            sys.exit('node selector must start with slash. try %s' % ('/' + node_selector))
         if not options.app:
             root_tag = node_selector.split('/')[1]
             options.app = app_by_root_tag.get(root_tag)
