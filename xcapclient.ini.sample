@@ -1,8 +1,7 @@
-# rename this file to '.xcapclient' and copy it to your homedir
+# rename this file to 'xcapclient.ini' and copy it to your home directory
 
 [Account]
-
-xcap_root = https://xcap.example.com/xcap-root
 username = alice
 password = 123
 domain = example.com
+xcap_root = https://xcap.example.com/xcap-root
