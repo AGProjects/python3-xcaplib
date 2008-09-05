@@ -502,7 +502,10 @@ def main():
     client = make_xcapclient(options)
     sys.stderr.write('url: %s\n' % client.get_url(options.app, node_selector))
 
-    result = client_request(client, action, options, node_selector)
+    try:
+        result = client_request(client, action, options, node_selector)
+    except AlreadyExists, ex:
+        sys.exit(ex)
     if isinstance(result, addinfourl) and result.code==401 and not options.user.password and interactive():
         authreq = result.headers.get('www-authenticate')
         if authreq:

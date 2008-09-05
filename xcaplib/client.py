@@ -168,7 +168,23 @@ class Error(Exception):
     pass
 
 class AlreadyExists(Error):
-    pass
+    def __new__(cls, application, node=None):
+        if node is None:
+            return Error.__new__(DocumentAlreadyExists, application, node)
+        else:
+            return Error.__new__(NodeAlreadyExists, application)
+
+    def __init__(self, application, node=None):
+        self.application = application
+        self.node = node
+
+class DocumentAlreadyExists(AlreadyExists):
+    def __str__(self):
+        return 'Document %r already exists' % self.application
+
+class NodeAlreadyExists(AlreadyExists):
+    def __str__(self):
+        return 'Node %r already exists in %r' % (self.node, self.application)
 
 class XCAPClient(object):
 
@@ -235,7 +251,7 @@ class XCAPClient(object):
                 # 2. If-None-Match: *, what does it do?
                 return self.put(application, resource)
         else:
-            raise AlreadyExists
+            raise AlreadyExists(application)
 
     def insert(self, application, resource, node=None, etag=None, retries=5):
         """check that the resource doesn't exists. if so, PUT.
@@ -269,4 +285,4 @@ class XCAPClient(object):
                 else:
                     raise
             else:
-                raise AlreadyExists
+                raise AlreadyExists(application, node)
