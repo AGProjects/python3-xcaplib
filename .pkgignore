@@ -12,5 +12,5 @@ _darcs
 makedist
 TODO
 BUGS
-build/
-.tar.gz
+build
+*.tar.gz
