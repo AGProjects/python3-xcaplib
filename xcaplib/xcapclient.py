@@ -315,8 +315,6 @@ def completion(result, argv, comp_cword):
             discard('-o', 'get', 'delete')
         return
 
-    options.user = User(options.username, options.domain, options.password)
-
     action, args = args[0], args[1:]
     action = action.lower()
 
@@ -357,9 +355,7 @@ def run_completion(option, raise_ex=False):
             print x
 
 def complete_xpath(options, app, selector, action):
-    client = XCAPClient(options.xcap_root, options.user.without_password(),
-                        options.user.password, options.auth)
-
+    client = make_xcapclient(options)
     result = client.get(app)
 
     if isinstance(result, Resource):
@@ -383,10 +379,10 @@ def check_options(options):
     if options.xcap_root is None:
         sys.exit('Please specify XCAP root with --xcap-root. You can also put the default root in %s.' % CONFIG_FILE)
 
-    if options.user.username is None:
+    if options.username is None:
         sys.exit('Please specify --username. You can also put the default username in %s.' % CONFIG_FILE)
 
-    if options.user.domain is None:
+    if options.domain is None:
         sys.exit('Please specify --domain. You can also put the default domain in %s.' % CONFIG_FILE)
 
 
@@ -400,8 +396,6 @@ def parse_args():
     parser = optparse.OptionParser(usage=__doc__, formatter=IndentedHelpFormatter())
     setup_parser(parser)
     options, args = parser.parse_args(argv)
-
-    options.user = User(options.username, options.domain, options.password)
 
     if not args:
         sys.exit('Please provide ACTION.')
@@ -459,8 +453,9 @@ def parse_args():
     return options, action, node_selector
 
 def make_xcapclient(options, XCAPClient=XCAPClient):
-    return XCAPClient(options.xcap_root, options.user.without_password(),
-                      options.user.password, options.auth)
+    user = User(options.username, options.domain, options.password)
+    return XCAPClient(options.xcap_root, user.without_password(),
+                      user.password, options.auth)
 
 def write_etag(etag):
     if etag:
@@ -506,7 +501,7 @@ def main():
         result = client_request(client, action, options, node_selector)
     except AlreadyExists, ex:
         sys.exit(ex)
-    if isinstance(result, addinfourl) and result.code==401 and not options.user.password and interactive():
+    if isinstance(result, addinfourl) and result.code==401 and not options.password and interactive():
         authreq = result.headers.get('www-authenticate')
         if authreq:
             mo = urllib2.AbstractBasicAuthHandler.rx.search(authreq)
@@ -514,7 +509,6 @@ def main():
                 options.auth, realm = mo.groups()
                 sys.stderr.write('Server requested authentication, but no password was provided.\n')
                 options.password = getPassword('Password (realm=%s): ' % realm)
-                options.user = User(options.username, options.domain, options.password)
                 client = make_xcapclient(options)
                 result = client_request(client, action, options, node_selector)
     if isinstance(result, Resource):
