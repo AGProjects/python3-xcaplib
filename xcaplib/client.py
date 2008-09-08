@@ -53,7 +53,7 @@ class Resource(str):
             return None
         elif node.endswith('namespace::*'):
             return NSBindings.content_type
-        elif node[node.rindex('/'):][:1] == '@':
+        elif node[node.rindex('/')+1:][:1] == '@':
             return AttributeValue.content_type
         else:
             return Element.content_type
