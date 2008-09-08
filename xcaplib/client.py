@@ -137,7 +137,7 @@ class HTTPConnectionWrapper(object):
     def request(self, method, path, headers=None, data=None, etag=None):
         if path[:1]=='/':
             path = path[1:]
-        if headers==None:
+        if headers is None:
             headers = {}
         if etag is not None:
             headers['If-Match'] = '"' + etag + '"'
@@ -211,21 +211,23 @@ class XCAPClient(object):
     def get_url(self, application, node):
         return (self.root or '') + self.get_path(application, node)
 
-    def get(self, application, node=None, etag=None):
+    def get(self, application, node=None, etag=None, headers=None):
         path = self.get_path(application, node)
-        return self.con.get(path, etag=etag)
+        return self.con.get(path, etag=etag, headers=headers)
 
-    def put(self, application, resource, node=None, etag=None):
+    def put(self, application, resource, node=None, etag=None, headers=None):
         path = self.get_path(application, node)
-        headers = {}
-        content_type = Resource.get_content_type(node)
-        if content_type:
-            headers['Content-Type'] = content_type
+        if headers is None:
+            headers = {}
+        if 'Content-Type' not in headers:
+            content_type = Resource.get_content_type(node)
+            if content_type:
+                headers['Content-Type'] = content_type
         return self.con.request('PUT', path, headers, resource, etag=etag)
 
-    def delete(self, application, node=None, etag=None):
+    def delete(self, application, node=None, etag=None, headers=None):
         path = self.get_path(application, node)
-        return self.con.request('DELETE', path, etag=etag)
+        return self.con.request('DELETE', path, etag=etag, headers=headers)
 
     def replace(self, application, resource, node=None, etag=None):
         """check that the already exists. if so, PUT.
