@@ -36,3 +36,4 @@ if [ $create -eq 1 ]; then
    rm ../$self
 fi
 
+scp $archive ws1:/var/www/download/OpenXCAP/clients/
