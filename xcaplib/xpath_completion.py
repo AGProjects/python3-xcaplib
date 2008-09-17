@@ -32,14 +32,11 @@ def lxml_tag(tag):
 
 def get_xml_info(input_file):
     "return tag and attributes of the root element in xml file"
-    try:
-        if input_file:
-            xml = etree.parse(file(input_file))
-            el = xml.getroot()
-            tag = lxml_tag(el.tag)[1]
-            return tag, el.attrib
-    except:
-        log(traceback.format_exc())
+    if input_file:
+        xml = etree.parse(input_file)
+        el = xml.getroot()
+        tag = lxml_tag(el.tag)[1]
+        return tag, el.attrib
     return None, {}
 
 def fix_namespace_prefix(selector, prefix = 'default'):
@@ -283,10 +280,10 @@ def enum_paths_insert(document, selector_start, my_tag, my_attrs):
     return res
 
 def enum_paths_replace_wfile(document, selector_start, input_filename):
-    return enum_paths_replace(document, selector_start, *get_xml_info(input_filename))
+    return enum_paths_replace(document, selector_start, *get_xml_info(file(input_filename)))
 
 def enum_paths_insert_wfile(document, selector_start, input_filename):
-    return enum_paths_insert(document, selector_start, *get_xml_info(input_filename))
+    return enum_paths_insert(document, selector_start, *get_xml_info(file(input_filename)))
 
 def enum_paths_put(document, selector_start, my_tag, my_attrs):
     x1 = enum_paths_replace(document, selector_start, my_tag, my_attrs)
@@ -295,7 +292,7 @@ def enum_paths_put(document, selector_start, my_tag, my_attrs):
     return x1
 
 def enum_paths_put_wfile(document, selector_start, input_filename):
-    return enum_paths_put(document, selector_start, *get_xml_info(input_filename))
+    return enum_paths_put(document, selector_start, *get_xml_info(file(input_filename)))
 
 class _test:
 

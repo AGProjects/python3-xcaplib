@@ -436,7 +436,7 @@ def parse_args():
 
     if not options.app:
         if action in update_actions:
-            root_tag = get_xml_info(options.input_data)[1]
+            root_tag = get_xml_info(StringIO(options.input_data))[0]
             if root_tag is None:
                 sys.exit('Please specify --app. Cannot extract root tag from document %r.' % \
                          (options.input_filename or '<stdin'))

@@ -140,7 +140,7 @@ class HTTPConnectionWrapper(object):
         if headers is None:
             headers = {}
         if etag is not None:
-            headers['If-Match'] = '"' + etag + '"'
+            headers['If-Match'] = '"' + etag + '"' # XXX use quoteString instead?
         url = self.base_url+path
         req = HTTPRequest(url, method=method, headers=headers, data=data)
         try:
