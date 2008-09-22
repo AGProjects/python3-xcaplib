@@ -1,3 +1,9 @@
+python-xcaplib (1.0.2) unstable; urgency=low
+
+  * removed setuptools from setup.py completely
+
+ -- Denis Bilenko <denis@ag-projects.com>  Mon, 22 Sep 2008 22:14:46 +0200
+
 python-xcaplib (1.0.1) unstable; urgency=low
 
   * fixed setup.py to use setuptools only if available
