@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 from xcaplib import __version__
 
 setup(name         = "xcaplib",
