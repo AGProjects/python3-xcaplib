@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
-
+from distutils.core import setup
 from xcaplib import __version__
 
 setup(name         = "python-xcaplib",
