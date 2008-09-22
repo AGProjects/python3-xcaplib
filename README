@@ -26,7 +26,7 @@ store data like presence policy in combination with a SIP Presence server
 that supports PUBLISH/SUBSCRIBE/NOTIFY methods to provide a complete SIP
 SIMPLE solution.
 
-The XCAP client allows for management of documents on the XCAP server. 
+The XCAP client allows for management of documents on the XCAP server.
 
 
 Installation
@@ -41,7 +41,7 @@ OpenXCAP server from http://openxcap.org
 
 2. Copy xcapclient.ini.sample to ~/xcapclient.ini and change accordingly to
    your XCAP servers configuration. You may set the username, domain,
-   password and xcap root, which can be overwritten by the coresponding
+   password and xcap root, which can be overwritten by the corresponding
    parameters of the command line
 
 3. For argument and node-selector bash completion:
