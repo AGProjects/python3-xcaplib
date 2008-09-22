@@ -3,7 +3,7 @@
 from setuptools import setup
 from xcaplib import __version__
 
-setup(name         = "xcaplib",
+setup(name         = "python-xcaplib",
       version      = __version__,
       author       = "Denis Bilenko",
       author_email = "support@ag-projects.com",
