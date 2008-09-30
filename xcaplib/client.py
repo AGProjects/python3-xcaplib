@@ -150,11 +150,13 @@ class HTTPConnectionWrapper(object):
         req = HTTPRequest(url, method=method, headers=headers, data=data)
         try:
             response = self.opener.open(req)
+            response.req = req
             response.etag = parse_etag_value(response.headers.get('etag'))
             return response
             # contrary to what documentation for urllib2 says, this can return addinfourl
             # instead of HTTPError which is though has all the relevant attributes (code, msg etc)
         except HTTPError, e:
+            e.req = req
             e.etag = parse_etag_value(e.headers.get('etag'))
             if 200 <= e.code <= 299:
                 return e
