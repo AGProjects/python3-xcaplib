@@ -95,6 +95,11 @@ class HTTPRequest(urllib2.Request):
     def get_method(self):
         return self.method
 
+    def format(self):
+        s = '%s %s\n' % (self.get_method(), self.get_full_url())
+        s += '\n'.join(("%s: %s" % x for x in self.header_items()))
+        return s
+
 def parse_etag_value(s):
     if s is None:
         return s
