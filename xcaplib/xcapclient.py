@@ -176,7 +176,6 @@ def setup_parser_client(parser):
 
     parser.add_option("--auth", help=help, default=Account.auth)
 
-
 def setup_parser(parser):
     help="Application Unique ID. There's no default value; however, it will be " + \
          "guessed from NODE-SELECTOR (when present) or from the input file (when action is PUT). " + \
@@ -185,12 +184,16 @@ def setup_parser(parser):
 
     setup_parser_client(parser)
 
+    help='use "global" document selector (by default enabled only for xcap-caps)'
+    parser.add_option('--global', help=help, dest='globaltree', action='store_true', default=False)
+
     parser.add_option("-i", dest='input_filename',
                       help="source file for the PUT request; default is <stdin>")
     parser.add_option("-o", dest='output_filename',
                       help="output file for the server response (successful or rejected); default is <stdout>")
     #parser.add_option("-d", dest='debug', action='store_true', default=False,
     #                  help="print whole http requests and replies to stderr")
+
 
 def lxml_tag(tag):
     # for tags like '{namespace}tag'
@@ -450,6 +453,9 @@ def parse_args():
     if args:
         sys.exit("Too many positional arguments.")
 
+    if options.app == 'xcap-caps':
+        options.globaltree = True
+
     return options, action, node_selector
 
 def make_xcapclient(options, XCAPClient=XCAPClient):
@@ -474,11 +480,14 @@ def write_body(options, data):
             sys.stderr.write('\n')       
 
 def client_request(client, action, options, node_selector):
+    kwargs = {}
+    if options.globaltree:
+        kwargs['globaltree'] = True
     try:
         if action in ['get', 'delete']:
-            return getattr(client, action)(options.app, node_selector)
+            return getattr(client, action)(options.app, node_selector, **kwargs)
         elif action in update_actions:
-            return getattr(client, action)(options.app, options.input_data, node_selector)
+            return getattr(client, action)(options.app, options.input_data, node_selector, **kwargs)
         else:
             raise ValueError('Unknown action: %r' % action)
     except HTTPError, ex:
@@ -495,7 +504,7 @@ def main():
 
     options, action, node_selector = parse_args()
     client = make_xcapclient(options)
-    sys.stderr.write('url: %s\n' % client.get_url(options.app, node_selector))
+    sys.stderr.write('url: %s\n' % client.get_url(options.app, node_selector, options.globaltree))
 
     try:
         result = client_request(client, action, options, node_selector)
