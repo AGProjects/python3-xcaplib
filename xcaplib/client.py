@@ -209,8 +209,14 @@ class XCAPClient(object):
         else:
             self.con = connection
 
-    def get_path(self, application, node):
-        path = "/%s/users/%s/index.xml" % (application, self.user)
+    def get_path(self, application, node, filename='index.xml'):
+        path = "/%s/users/%s/%s" % (application, self.user, filename)
+        if node:
+            path += '~~' + node
+        return path
+
+    def get_global_path(self, application, node, filename='index.xml'):
+        path = "/%s/global/%s" % (application, filename)
         if node:
             path += '~~' + node
         return path
@@ -220,6 +226,10 @@ class XCAPClient(object):
 
     def get(self, application, node=None, etag=None, headers=None):
         path = self.get_path(application, node)
+        return self.con.get(path, etag=etag, headers=headers)
+
+    def get_global(self, application, node=None, etag=None, headers=None):
+        path = self.get_global_path(application, node)
         return self.con.get(path, etag=etag, headers=headers)
 
     def put(self, application, resource, node=None, etag=None, headers=None):
