@@ -218,15 +218,15 @@ class XCAPClient(object):
             path += '~~' + node
         return path
 
-    def get_url(self, application, node, globaltree):
-        return (self.root or '') + self.get_path(application, node, globaltree)
+    def get_url(self, application, node, **kwargs):
+        return (self.root or '') + self.get_path(application, node, **kwargs)
 
-    def get(self, application, node=None, etag=None, headers=None, globaltree=False):
-        path = self.get_path(application, node, globaltree)
+    def get(self, application, node=None, etag=None, headers=None, **kwargs):
+        path = self.get_path(application, node, **kwargs)
         return self.con.get(path, etag=etag, headers=headers)
 
-    def put(self, application, resource, node=None, etag=None, headers=None, globaltree=False):
-        path = self.get_path(application, node, globaltree)
+    def put(self, application, resource, node=None, etag=None, headers=None, **kwargs):
+        path = self.get_path(application, node, **kwargs)
         if headers is None:
             headers = {}
         if 'Content-Type' not in headers:
@@ -235,37 +235,37 @@ class XCAPClient(object):
                 headers['Content-Type'] = content_type
         return self.con.request('PUT', path, headers, resource, etag=etag)
 
-    def delete(self, application, node=None, etag=None, headers=None, globaltree=False):
-        path = self.get_path(application, node, globaltree)
+    def delete(self, application, node=None, etag=None, headers=None, **kwargs):
+        path = self.get_path(application, node, **kwargs)
         return self.con.request('DELETE', path, etag=etag, headers=headers)
 
-    def replace(self, application, resource, node=None, etag=None, globaltree=False):
+    def replace(self, application, resource, node=None, etag=None, **kwargs):
         """check that the already exists. if so, PUT.
         Return (old_resource, reply to PUT)
         """
-        old = self.get(application, node, etag, globaltree=globaltree)
-        res = self.put(application, resource, node, old.etag, globaltree=globaltree)
+        old = self.get(application, node, etag, **kwargs)
+        res = self.put(application, resource, node, old.etag, **kwargs)
         return (old, res)
 
-    def insert_document(self, application, resource, globaltree=False):
+    def insert_document(self, application, resource, **kwargs):
         """check that the resource doesn't exists. if so, PUT.
 
         Since 404 doesn't return ETag, it is not reliable (someone could
         do PUT after our GET and we will replace the document, instead of inserting.
         """
         try:
-            self.get(application, globaltree=globaltree)
+            self.get(application, **kwargs)
         except HTTPError, ex:
             if ex.code == 404:
                 # how to ensure insert?
                 # 1. make openxcap to supply fixed tag into 404, like ETag: "none"
                 # and understand If-Match: "none" as intent to insert.
                 # 2. If-None-Match: *, what does it do?
-                return self.put(application, resource, globaltree=globaltree)
+                return self.put(application, resource, **kwargs)
         else:
             raise AlreadyExists(application)
 
-    def insert(self, application, resource, node=None, etag=None, retries=5, globaltree=False):
+    def insert(self, application, resource, node=None, etag=None, retries=5, **kwargs):
         """check that the resource doesn't exists. if so, PUT.
         1. Get the whole document. This is needed for etag.
         2. If node supplied, check that that node doesn't exists (it
@@ -276,19 +276,19 @@ class XCAPClient(object):
         if node is None:
             if etag is not None:
                 raise ValueError('Cannot PUT the document, reliably. Set etag to None')
-            return self.insert_document(application, resource)
+            return self.insert_document(application, resource, **kwargs)
 
         while retries>=0:
             retries -= 1
-            document = self.get(application, None, etag, globaltree=globaltree)
+            document = self.get(application, None, etag, **kwargs)
             try:
-                element = self.get(application, node, document.etag, globaltree=globaltree)
+                element = self.get(application, node, document.etag, **kwargs)
             except HTTPError, ex:
                 if etag is None and ex.code == 412:
                     continue
                 elif ex.code == 404:
                     try:
-                        return self.put(application, resource, node, document.etag, globaltree=globaltree)
+                        return self.put(application, resource, node, document.etag, **kwargs)
                     except HTTPError, ex:
                         if etag is None and ex.code == 412:
                             continue

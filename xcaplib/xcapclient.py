@@ -182,6 +182,8 @@ def setup_parser(parser):
          "Known apps: %s" % ', '.join(apps)
     parser.add_option("--app", dest='app', help=help)
 
+    parser.add_option("--filename", dest='filename', default='index.xml')
+
     setup_parser_client(parser)
 
     help='use "global" document selector (by default enabled only for xcap-caps)'
@@ -483,6 +485,7 @@ def client_request(client, action, options, node_selector):
     kwargs = {}
     if options.globaltree:
         kwargs['globaltree'] = True
+    kwargs['filename'] = options.filename
     try:
         if action in ['get', 'delete']:
             return getattr(client, action)(options.app, node_selector, **kwargs)
@@ -504,7 +507,8 @@ def main():
 
     options, action, node_selector = parse_args()
     client = make_xcapclient(options)
-    sys.stderr.write('url: %s\n' % client.get_url(options.app, node_selector, options.globaltree))
+    sys.stderr.write('url: %s\n' % client.get_url(options.app, node_selector,
+                                                  globaltree=options.globaltree, filename=options.filename))
 
     try:
         result = client_request(client, action, options, node_selector)
