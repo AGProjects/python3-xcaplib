@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+   <rls-services xmlns="urn:ietf:params:xml:ns:rls-services"
+      xmlns:rl="urn:ietf:params:xml:ns:resource-lists"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <service uri="sip:mybuddies@example.com">
+     <resource-list>https://xcap.example.com/xcap-root/resource-lists/users/sip:alice@example.com/index/~~/resource-lists/list%5b@name=%22l1%22%5d</resource-list>
+     <packages>
+      <package>presence</package>
+     </packages>
+    </service>
+    <service uri="sip:marketing@example.com">
+      <list name="marketing">
+        <rl:entry uri="sip:joe@example.com"/>
+        <rl:entry uri="sip:sudhir@example.com"/>
+      </list>
+      <packages>
+        <package>presence</package>
+      </packages>
+    </service>
+   </rls-services>

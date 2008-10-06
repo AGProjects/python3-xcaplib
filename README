@@ -59,16 +59,19 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
 
 1. Operating on XCAP documents (full document handling)
+  
+  In the examples folder thar are sample XCAP XML documents used for the
+  exmaples below:
 
   a. PUT
 
-  xcapclient --app pres-rules -i pres-rules.xml put
+  Put a presence rules document:
 
-  to put a a presence rules document or 
+  xcapclient --app pres-rules -i pres-rules.xml put
 
   xcapclient --app resource-lists -i resource-lists.xml put
 
-  to put a resource-lists document on the server.
+  Put a resource-lists document:
  
   On success, the command prints '201 Created' if a new document was created on the
   server or '200 OK' if an existing document was replaced. You should something like this:
@@ -76,6 +79,15 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
   url: http://xcap.example.com/xcap-root/resource-lists/users/alice@example.com/index.xml
   201 Created
   etag: "856bdac9012ee28e46cebb81e51ac2a0"
+
+  Put a rls-services document:
+
+  xcapclient --app rls-services -i rls-services.xml put
+
+  url: https://xcap.sipthor.net/xcap-root/rls-services/users/alice@example.com/index.xml
+  200 OK
+  etag: "47c5d3be9e18dd81e2e6326e9a47609e"
+ 
 
   b. GET
 
@@ -85,11 +97,24 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
   xcapclient --app pres-rules get
 
+  or 
+
+  xcapclient --app rls-services get
+
   This will print the document you've just put, along with its tag.
+
 
   c. DELETE
 
   xcapclient --app resource-lists delete
+
+  and
+
+  xcapclient --app pres-rules delete
+
+  and
+
+  xcapclient --app rls-services  delete
 
 
 2. Operating on XML elements (partial document handling)
