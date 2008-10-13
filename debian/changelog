@@ -1,3 +1,9 @@
+python-xcaplib (1.0.4) unstable; urgency=low
+
+  * added --sip-address option (sip_address in the config file)
+
+ -- Denis Bilenko <denis@ag-projects.com>  Mon, 13 Oct 2008 11:55:53 +0200
+
 python-xcaplib (1.0.3) unstable; urgency=low
 
   * added support for documents in the global context
