@@ -21,18 +21,18 @@ try:
     from xml.sax.saxutils import quoteattr
     from lxml import etree
     from twisted.python import log as twistedlog
-    
+
     # prevent application.configuration from installing its SimpleObserver
     # which prints to stdout all kinds of useless crap from twisted
     twistedlog.defaultObserver = None
     # not using twisted anymore? remove it?
-    
+
     from application.configuration import *
 
     try:
         from twisted.python.util import getPassword
     except ImportError:
-        getPassword = raw_input    
+        getPassword = raw_input
 
     from xcaplib.client import *
     from xcaplib.xpath_completion import *
@@ -111,8 +111,9 @@ class Account(ConfigSection):
     _datatypes = {
         'auth' : Auth,
         'password' : str }
-    username = ''
+    sip_address = ''
     password = None
+    username = ''
     domain = ''
     auth = ''
     xcap_root = ''
@@ -155,20 +156,19 @@ def setup_parser_client(parser):
         default = None
     parser.add_option("--xcap-root", help=help, default=default)
 
-    help = 'username part of User ID'
-    if Account.username:
-        help += '; default is %s' % Account.username
-    parser.add_option('--username', default=Account.username, help=help)
+    help = "SIP address of the user in the form username@domain"
+    if Account.sip_address:
+        help += '; default is %s' % Account.sip_address
+    parser.add_option("--sip-address", default=Account.sip_address, help=help)
+
+    # the older variant of sip_address: supply username and domain independently
+    parser.add_option('--username', default=Account.username, help=optparse.SUPPRESS_HELP)
+    parser.add_option('--domain',   default=Account.domain, help=optparse.SUPPRESS_HELP)
 
     help = 'password to use if authentication is required. If not supplied will be asked interactively' # XXX do it
     if Account.password:
         help += '; default is *****'
     parser.add_option('--password', default=Account.password, help=help)
-
-    help = 'domain part of User ID'
-    if Account.domain:
-        help += '; default is %s' % Account.domain
-    parser.add_option('--domain',   default=Account.domain, help=help)
 
     help="authentification type, basic, digest or none"
     if Account.auth:
@@ -252,7 +252,7 @@ def bash_unquote(s):
 def completion(result, argv, comp_cword):
 
     log("argv: %r", argv)
-    
+
     if twistedlog.defaultObserver is not None:
         twistedlog.defaultObserver.stop()
         twistedlog.defaultObserver = NullObserver()
@@ -384,11 +384,21 @@ def check_options(options):
     if options.xcap_root is None:
         sys.exit('Please specify XCAP root with --xcap-root. You can also put the default root in %s.' % CONFIG_FILE)
 
-    if options.username is None:
-        sys.exit('Please specify --username. You can also put the default username in %s.' % CONFIG_FILE)
+    if options.sip_address:
+        if options.username:
+            sys.stderr.write('Ignoring "username" when "sip-address" is present.\n')
+        if options.domain:
+            sys.stderr.write('Ignoring "domain" when "sip-address" is present.\n')
+    else:
+        if options.username and options.domain:
+            options.sip_address = options.username + '@' + options.domain
+        else:
+            sys.exit('Please specify --sip-address. You can also put the default sip_address in %s.' % CONFIG_FILE)
 
-    if options.domain is None:
-        sys.exit('Please specify --domain. You can also put the default domain in %s.' % CONFIG_FILE)
+    if options.sip_address.lower().startswith('sip:'):
+        options.sip_address = options.sip_address[4:]
+
+    options.username, options.domain = options.sip_address.split('@')
 
 
 def parse_args():
@@ -406,7 +416,7 @@ def parse_args():
         sys.exit('Please provide ACTION.')
 
     check_options(options)
-    
+
     action, args = args[0], args[1:]
     action = action.lower()
     if action not in actions:
@@ -479,7 +489,7 @@ def write_body(options, data):
         sys.stderr.write('%s bytes saved to %s\n' % (len(data), options.output_filename))
     else:
         if data and data[-1]!='\n':
-            sys.stderr.write('\n')       
+            sys.stderr.write('\n')
 
 def client_request(client, action, options, node_selector):
     kwargs = {}
