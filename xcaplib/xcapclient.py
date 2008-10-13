@@ -42,7 +42,7 @@ except:
     else:
         raise
 
-CONFIG_FILE = '~/xcapclient.ini'
+CONFIG_FILE = '~/.sipclient/config.ini'
 
 # to guess app from /NODE-SELECTOR
 app_by_root_tag = {
