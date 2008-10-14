@@ -198,7 +198,7 @@ class XCAPClient(object):
 
     HTTPConnectionWrapper = HTTPConnectionWrapper
 
-    def __init__(self, root, user, password=None, auth='basic', connection=None):
+    def __init__(self, root, user, password=None, auth=None, connection=None):
         self.root = root
         if self.root[-1:] == '/':
             self.root = self.root[:-1]
