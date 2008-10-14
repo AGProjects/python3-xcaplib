@@ -1,1 +1,2 @@
-Show which configuration file has been loaded
+Add xcapclient examples in the README for PUT/GET, adding and deleting incremental entries from all supported xcap documents for user alice 
+Don't print stacktrace for HTTP errors
