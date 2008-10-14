@@ -42,7 +42,7 @@ except:
     else:
         raise
 
-CONFIG_FILE = '~/.sipclient/config.ini'
+CONFIG_FILE = os.path.expanduser('~/.sipclient/config.ini')
 
 # to guess app from /NODE-SELECTOR
 app_by_root_tag = {
@@ -117,64 +117,48 @@ class Account(ConfigSection):
     domain = ''
     auth = ''
     xcap_root = ''
-    _environ = { 'username'  : 'XCAP_USERNAME',
-                 'password'  : 'XCAP_PASSWORD',
-                 'domain'    : 'XCAP_DOMAIN',
-                 'xcap_root' : 'XCAP_ROOT' }
-    @classmethod
-    def load_from_environ(cls):
-        for item, env_key in cls._environ.items():
-            if env_key in os.environ:
-                setattr(cls, item, os.environ[env_key])
 
-def read_xcapclient_cfg():
-    client_config = ConfigFile(os.path.expanduser(CONFIG_FILE))
-    client_config.read_settings('Account', Account)
-    Account.load_from_environ()
-    #client_config.read_settings('Server', ServerConfig)
+def get_account_section(account_name=None):
+    if account_name is None:
+        return "Account"
+    else:
+        return "Account_%s" % account_name
 
-def read_openxcap_cfg():
-    # load local server's xcap-root as well
-    # XXX fix openxcap to allow port in xcap-root
-    server_config = ConfigFile('/etc/openxcap/config.ini')
-    server_config.read_settings('Server', ServerConfig)
-
-def read_cfg():
-    read_xcapclient_cfg()
-    #read_openxcap_cfg()
-
+def read_default_options(account_section='Account'):
+    client_config = ConfigFile(CONFIG_FILE)
+    client_config.read_settings(account_section, Account)
+    if client_config.get_section(account_section) is None:
+        return None
+    else:
+        return dict((k, v) for (k, v) in Account.__dict__.iteritems() if k[:1]!='_' and v)
 
 def setup_parser_client(parser):
 
-    help = 'XCAP root'
+    help = ("The account name from which to read account settings. "
+            "Corresponds to section Account_NAME in the configuration file. "
+            "If not supplied, the section Account will be read.")
+    parser.add_option("-a", "--account-name", type="string", help=help, metavar="NAME")
 
-    if Account.xcap_root:
-        help += '; default is %s' % Account.xcap_root
-        default = Account.xcap_root
-    else:
-        help += ', e.g. https://xcap.example.com/xcap-root'
-        default = None
-    parser.add_option("--xcap-root", help=help, default=default)
+    help = 'XCAP root, e.g. https://xcap.example.com/xcap-root'
+
+    parser.add_option("--xcap-root", help=help, default=Account.xcap_root)
 
     help = "SIP address of the user in the form username@domain"
-    if Account.sip_address:
-        help += '; default is %s' % Account.sip_address
     parser.add_option("--sip-address", default=Account.sip_address, help=help)
 
     # the older variant of sip_address: supply username and domain independently
     parser.add_option('--username', default=Account.username, help=optparse.SUPPRESS_HELP)
     parser.add_option('--domain',   default=Account.domain, help=optparse.SUPPRESS_HELP)
 
-    help = 'password to use if authentication is required. If not supplied will be asked interactively' # XXX do it
-    if Account.password:
-        help += '; default is *****'
-    parser.add_option('--password', default=Account.password, help=help)
+    help = 'password to use if authentication is required. If not supplied will be asked interactively'
+    parser.add_option('-p', '--password', default=Account.password, help=help)
 
     help="authentification type, basic, digest or none"
-    if Account.auth:
-         help += "; default is %s" % Account.auth
+    parser.add_option("--auth", help=help, default=optparse.SUPPRESS_HELP)
 
-    parser.add_option("--auth", help=help, default=Account.auth)
+    parser.add_option("--show-config", action="store_true", default=False,
+                      help="show options from the configuration file; use together with --account-name")
+
 
 def setup_parser(parser):
     help="Application Unique ID. There's no default value; however, it will be " + \
@@ -296,7 +280,6 @@ def completion(result, argv, comp_cword):
                 add(opt)
         add(*actions)
 
-    read_cfg()
     parser = OptionParser_NoExit()
     setup_parser(parser)
 
@@ -311,6 +294,8 @@ def completion(result, argv, comp_cword):
         return
 
     options, args = parser.parse_args(argv)
+    options._update_careful(read_default_options(get_account_section(options.account_name)) or {})
+    fix_options(options)
 
     if not args:
         complete_options(parser)
@@ -380,7 +365,7 @@ class IndentedHelpFormatter(optparse.IndentedHelpFormatter):
         return usage
 
 
-def check_options(options):
+def fix_options(options):
     if options.xcap_root is None:
         sys.exit('Please specify XCAP root with --xcap-root. You can also put the default root in %s.' % CONFIG_FILE)
 
@@ -400,6 +385,21 @@ def check_options(options):
 
     options.username, options.domain = options.sip_address.split('@')
 
+def update_options_from_config(options):
+    default_options = read_default_options(get_account_section(options.account_name))
+
+    if options.show_config:
+        if default_options is None:
+            sys.exit('Section [%s] was not found in %s' % (get_account_section(options.account_name), CONFIG_FILE))
+        else:
+            print "Configuration file: %s" % CONFIG_FILE
+            print '[%s]' % get_account_section(options.account_name)
+            for x in default_options.iteritems():
+                print '%s = %s' % x
+            sys.exit(0)
+
+    options._update_careful(default_options)
+    fix_options(options)
 
 def parse_args():
     argv = sys.argv[1:]
@@ -407,15 +407,13 @@ def parse_args():
     if not argv:
         sys.exit('Type %s -h for help.' % sys.argv[0])
 
-    read_cfg()
     parser = optparse.OptionParser(usage=__doc__, formatter=IndentedHelpFormatter())
     setup_parser(parser)
     options, args = parser.parse_args(argv)
+    update_options_from_config(options)
 
     if not args:
         sys.exit('Please provide ACTION.')
-
-    check_options(options)
 
     action, args = args[0], args[1:]
     action = action.lower()
