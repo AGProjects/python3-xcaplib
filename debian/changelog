@@ -1,3 +1,13 @@
+python-xcaplib (1.0.5) unstable; urgency=low
+
+  * changed default filename from index.xml to index
+  * changed default auth to None (support both basic and digest)
+  * removed loading options from environ (XCAP_ROOT etc)
+  * added -a, --account-name option
+  * added --show-config option
+
+ -- Denis Bilenko <denis@ag-projects.com>  Tue, 14 Oct 2008 14:10:06 +0200
+
 python-xcaplib (1.0.4) unstable; urgency=low
 
   * added --sip-address option (sip_address in the config file)
