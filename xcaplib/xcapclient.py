@@ -32,7 +32,7 @@ try:
     except ImportError:
         getPassword = raw_input
 
-    from xcaplib.client import XCAPClient, Resource, addinfourl
+    from xcaplib.client import XCAPClient, Resource, HTTPError, addinfourl, AlreadyExists
     from xcaplib.xpath_completion import *
 except:
     if OPT_COMPLETE in sys.argv[-2:]:
