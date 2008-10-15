@@ -210,7 +210,9 @@ class XCAPClient(object):
         else:
             self.con = connection
 
-    def get_path(self, application, node, globaltree=False, filename='index'):
+    def get_path(self, application, node, globaltree=False, filename=None):
+        if filename is None:
+            filename = 'index'
         if globaltree:
             path = "/%s/global/%s" % (application, filename)
         else:

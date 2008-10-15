@@ -166,7 +166,7 @@ def setup_parser(parser):
          "Known apps: %s" % ', '.join(apps)
     parser.add_option("--app", dest='app', help=help)
 
-    parser.add_option("--filename", dest='filename', default='index.xml')
+    parser.add_option("--filename", dest='filename')
 
     setup_parser_client(parser)
 
