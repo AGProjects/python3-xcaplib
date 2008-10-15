@@ -422,13 +422,12 @@ def parse_args():
 
     options.input_data = None
 
-    if action in update_actions:
-        if options.input_filename is None:
-            if hasattr(sys.stdin, 'isatty') and sys.stdin.isatty():
-                sys.stderr.write('Reading PUT body from stdin. Type CTRL-D when done\n')
-            options.input_data = sys.stdin.read()
-        else:
-            options.input_data = file(options.input_filename).read()
+    if options.input_filename is not None:
+        options.input_data = file(options.input_filename).read()
+    elif action in update_actions:
+        if interactive():
+            sys.stderr.write('Reading PUT body from stdin. Type CTRL-D when done\n')
+        options.input_data = sys.stdin.read()
 
     if options.output_filename is None:
         options.output_file = sys.stdout
@@ -448,7 +447,7 @@ def parse_args():
                 sys.exit('Please specify --app. Root tag %r gives no clue.' % root_tag)
 
     if not options.app:
-        if action in update_actions:
+        if options.input_data is not None:
             root_tag = get_xml_info(StringIO(options.input_data))[0]
             if root_tag is None:
                 sys.exit('Please specify --app. Cannot extract root tag from document %r.' % \
