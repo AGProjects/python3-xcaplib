@@ -1,3 +1,10 @@
+python-xcaplib (1.0.6) unstable; urgency=low
+
+  * made "index" default filename for xcapclient as well
+  * made --app unnecessary for all types of requests if -i is present
+
+ -- Denis Bilenko <denis@ag-projects.com>  Wed, 15 Oct 2008 10:29:54 +0200
+
 python-xcaplib (1.0.5) unstable; urgency=low
 
   * changed default filename from index.xml to index
