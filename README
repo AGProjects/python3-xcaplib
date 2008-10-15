@@ -36,14 +36,14 @@ Installation
 Prerequisites. See the Prerequisites section of the INSTALL document for
 OpenXCAP server from http://openxcap.org
 
-1. Run 'python setup.py install' to install the software in the system 
+1. Run 'python setup.py install' to install the software in the system
 
    Alternatively you can run xcapclient from its local directory.
 
-2. Copy xcapclient.ini.sample to ~/xcapclient.ini and change accordingly to
-   your XCAP servers configuration. You may set the username, domain,
-   password and xcap root, which can be overwritten by the corresponding
-   parameters of the command line
+2. Copy config.ini.sample to ~/.sipclient/config.ini and change it accordingly
+   to your XCAP servers configuration. You may set the sip_address,
+   password and xcap root in the configuration. It is possible to override any
+   of the parameters with command-line switch
 
 3. For argument and node-selector bash completion:
    sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
@@ -57,37 +57,23 @@ This software has been tested against OpenXCAP server http://openxcap.org
 To test this script you can also register a SIP SIMPLE account on
 http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
-
 1. Operating on XCAP documents (full document handling)
-  
+
   In the examples folder thar are sample XCAP XML documents used for the
   exmaples below:
 
   a. PUT
 
-  Put a presence rules document:
+  To a document, for example, presence rules:
 
-  xcapclient --app pres-rules -i pres-rules.xml put
+  xcapclient -i pres-rules.xml put
 
-  xcapclient --app resource-lists -i resource-lists.xml put
-
-  Put a resource-lists document:
- 
   On success, the command prints '201 Created' if a new document was created on the
   server or '200 OK' if an existing document was replaced. You should something like this:
 
   url: http://xcap.example.com/xcap-root/resource-lists/users/alice@example.com/index.xml
   201 Created
   etag: "856bdac9012ee28e46cebb81e51ac2a0"
-
-  Put a rls-services document:
-
-  xcapclient --app rls-services -i rls-services.xml put
-
-  url: https://xcap.sipthor.net/xcap-root/rls-services/users/alice@example.com/index.xml
-  200 OK
-  etag: "47c5d3be9e18dd81e2e6326e9a47609e"
- 
 
   b. GET
 
@@ -97,7 +83,7 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
   xcapclient --app pres-rules get
 
-  or 
+  or
 
   xcapclient --app rls-services get
 
@@ -119,7 +105,7 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
 2. Operating on XML elements (partial document handling)
 
-  It is possible to retrieve a single element in an XCAP document, to
+  It is possible to retrieve a single element in XCAP document, to
   replace it, to insert a new one or to remove one. To address an element, a
   node selector is required, which is an XPATH-like expression, defined in
   http://tools.ietf.org/html/rfc4825#section-6.3.
@@ -149,4 +135,3 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
   etag: "bfbd38bed7163dd19e6e110d0dfa0876"
 
   This will shift Bill's entry to the second position.
-
