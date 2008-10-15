@@ -158,7 +158,7 @@ class HTTPConnectionWrapper(object):
             # attributes (code, msg etc).
         except HTTPError, e:
             e.req = req
-            e.etag = parse_etag_value(e.headers.get('etag'))
+            e.etag = parse_etag_value(e.hdrs.get('etag'))
             if 200 <= e.code <= 299:
                 return e
             raise
