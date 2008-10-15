@@ -1,4 +1,3 @@
-import traceback
 from lxml import etree
 from StringIO import StringIO
 from xml.sax.saxutils import quoteattr

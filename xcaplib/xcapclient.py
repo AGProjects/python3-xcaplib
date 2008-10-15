@@ -18,8 +18,6 @@ try:
     import optparse
     import traceback
     from StringIO import StringIO
-    from xml.sax.saxutils import quoteattr
-    from lxml import etree
     from twisted.python import log as twistedlog
 
     # prevent application.configuration from installing its SimpleObserver
@@ -27,14 +25,14 @@ try:
     twistedlog.defaultObserver = None
     # not using twisted anymore? remove it?
 
-    from application.configuration import *
+    from application.configuration import ConfigFile, ConfigSection
 
     try:
         from twisted.python.util import getPassword
     except ImportError:
         getPassword = raw_input
 
-    from xcaplib.client import *
+    from xcaplib.client import XCAPClient, Resource, addinfourl
     from xcaplib.xpath_completion import *
 except:
     if OPT_COMPLETE in sys.argv[-2:]:
