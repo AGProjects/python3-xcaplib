@@ -396,7 +396,8 @@ def update_options_from_config(options):
                 print '%s = %s' % x
             sys.exit(0)
 
-    options._update_careful(default_options)
+    if default_options is not None:
+        options._update_careful(default_options)
     fix_options(options)
 
 def parse_args():
