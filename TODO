@@ -1,2 +1,5 @@
-Add xcapclient examples in the README for PUT/GET, adding and deleting incremental entries from all supported xcap documents for user alice 
-Don't print stacktrace for HTTP errors
+- Add sip: before user@domain to the XUI in each request
+- Make it work in async mode, urllib is blocking
+- Add dump of HTTP headers (requests and responses) same as OpenXCAP
+- Don't print stacktrace for HTTP errors
+
