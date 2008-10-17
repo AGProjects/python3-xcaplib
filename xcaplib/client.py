@@ -194,6 +194,20 @@ class NodeAlreadyExists(AlreadyExists):
     def __str__(self):
         return 'Node %r already exists in %r' % (self.node, self.application)
 
+def get_path(xcap_user_id, application, node, globaltree=False, filename=None):
+    if filename is None:
+        filename = 'index'
+    if globaltree:
+        path = "/%s/global/%s" % (application, filename)
+    else:
+        path = "/%s/users/%s/%s" % (application, xcap_user_id, filename)
+    if node:
+        if path[-1:]!='/':
+            path += '/'
+        path += '~~' + node
+    return path
+
+
 class XCAPClient(object):
 
     HTTPConnectionWrapper = HTTPConnectionWrapper
@@ -210,26 +224,15 @@ class XCAPClient(object):
         else:
             self.con = connection
 
-    def get_path(self, application, node, globaltree=False, filename=None):
-        if filename is None:
-            filename = 'index'
-        if globaltree:
-            path = "/%s/global/%s" % (application, filename)
-        else:
-            path = "/%s/users/%s/%s" % (application, self.user, filename)
-        if node:
-            path += '~~' + node
-        return path
-
     def get_url(self, application, node, **kwargs):
-        return (self.root or '') + self.get_path(application, node, **kwargs)
+        return (self.root or '') + get_path(self.user, application, node, **kwargs)
 
     def get(self, application, node=None, etag=None, headers=None, **kwargs):
-        path = self.get_path(application, node, **kwargs)
+        path = get_path(self.user, application, node, **kwargs)
         return self.con.get(path, etag=etag, headers=headers)
 
     def put(self, application, resource, node=None, etag=None, headers=None, **kwargs):
-        path = self.get_path(application, node, **kwargs)
+        path = get_path(self.user, application, node, **kwargs)
         if headers is None:
             headers = {}
         if 'Content-Type' not in headers:
@@ -239,7 +242,7 @@ class XCAPClient(object):
         return self.con.request('PUT', path, headers, resource, etag=etag)
 
     def delete(self, application, node=None, etag=None, headers=None, **kwargs):
-        path = self.get_path(application, node, **kwargs)
+        path = get_path(self.user, application, node, **kwargs)
         return self.con.request('DELETE', path, etag=etag, headers=headers)
 
     def replace(self, application, resource, node=None, etag=None, **kwargs):
