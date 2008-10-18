@@ -1,4 +1,3 @@
 - Add sip: before user@domain to the XUI in each request
 - Make it work in async mode, urllib is blocking
 - even after asked for password, xcapclient still sends request without authorization first
-
