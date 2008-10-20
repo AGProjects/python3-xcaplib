@@ -15,6 +15,7 @@ OPT_COMPLETE = '--print-completions'
 try:
     import os
     import urllib2
+    from httplib import HTTPException
     import optparse
     import traceback
     from StringIO import StringIO
@@ -32,8 +33,8 @@ try:
     except ImportError:
         getPassword = raw_input
 
-    from xcaplib.client import XCAPClient, Resource, HTTPError, addinfourl, AlreadyExists
-    from xcaplib.xpath_completion import *
+    from xcaplib.client import XCAPClient
+    from xcaplib import xpath_completion
 except:
     if OPT_COMPLETE in sys.argv[-2:]:
         sys.exit(1)
@@ -165,18 +166,18 @@ def setup_parser_request(parser):
          "Known apps: %s" % ', '.join(apps)
     parser.add_option("--app", dest='app', help=help)
     parser.add_option("--filename", dest='filename')
-
-    setup_parser_client(parser)
-
-    help='use "global" document selector (by default enabled only for xcap-caps)'
-    parser.add_option('--global', help=help, dest='globaltree', action='store_true', default=False)
-
+    help='document context, users or global. default is users for everything except xcap-caps'
+    parser.add_option('-c', '--context', help=help, dest='context', default=None)
+    parser.add_option('--etag', help="Perform a conditional operation", metavar='ETAG')
+    parser.add_option('--add-header', dest='headers',
+                      action='append', default=[], help=optparse.SUPPRESS_HELP)
     parser.add_option("-i", dest='input_filename',
                       help="source file for the PUT request; default is <stdin>")
     parser.add_option("-o", dest='output_filename',
                       help="output file for the server response (successful or rejected); default is <stdout>")
-    #parser.add_option("-d", dest='debug', action='store_true', default=False,
-    #                  help="print whole http requests and replies to stderr")
+def setup_parser(parser):
+    setup_parser_client(parser)
+    setup_parser_request(parser)
 
 
 def lxml_tag(tag):
@@ -294,6 +295,7 @@ def completion(result, argv, comp_cword):
     options, args = parser.parse_args(argv)
     options._update_careful(read_default_options(get_account_section(options.account_name)) or {})
     fix_options(options)
+    set_globaltree(options)
 
     if not args:
         complete_options(parser)
@@ -344,14 +346,14 @@ def run_completion(option, raise_ex=False):
 
 def complete_xpath(options, app, selector, action):
     client = make_xcapclient(options)
-    result = client.get(app)
+    result = client._get(app)
 
-    if isinstance(result, Resource):
-        function = globals().get('enum_paths_'+action+'_wfile', enum_paths_get)
-        if function == enum_paths_get:
-            return enum_paths_get(result, selector)
+    if result.status==200:
+        function = xpath_completion.__dict__.get('enum_paths_'+action+'_wfile')
+        if function is None:
+            return xpath_completion.enum_paths_get(result.body, selector)
         else:
-            return function(result, selector, options.input_filename)
+            return function(result.body, selector, options.input_filename)
     return []
 
 
@@ -364,7 +366,7 @@ class IndentedHelpFormatter(optparse.IndentedHelpFormatter):
 
 
 def fix_options(options):
-    if options.xcap_root is None:
+    if not options.xcap_root:
         sys.exit('Please specify XCAP root with --xcap-root. You can also put the default root in %s.' % CONFIG_FILE)
 
     if options.sip_address:
@@ -382,6 +384,21 @@ def fix_options(options):
         options.sip_address = options.sip_address[4:]
 
     options.username, options.domain = options.sip_address.split('@')
+
+def set_globaltree(options):
+
+    if options.context is not None:
+        if options.context == 'global':
+            options.globaltree = True
+        elif options.context == 'users':
+            options.globaltree = False
+        else:
+            sys.exit("Context must either 'global' or 'users', not %r" % options.context)
+    else:
+        if options.app == 'xcap-caps':
+            options.globaltree = True
+        else:
+            options.globaltree = False
 
 def update_options_from_config(options):
     default_options = read_default_options(get_account_section(options.account_name))
@@ -447,7 +464,7 @@ def parse_args():
 
     if not options.app:
         if options.input_data is not None:
-            root_tag = get_xml_info(StringIO(options.input_data))[0]
+            root_tag = xpath_completion.get_xml_info(StringIO(options.input_data))[0]
             if root_tag is None:
                 sys.exit('Please specify --app. Cannot extract root tag from document %r.' % \
                          (options.input_filename or '<stdin'))
@@ -461,8 +478,7 @@ def parse_args():
     if args:
         sys.exit("Too many positional arguments.")
 
-    if options.app == 'xcap-caps':
-        options.globaltree = True
+    set_globaltree(options)
 
     return options, action, node_selector
 
@@ -478,6 +494,9 @@ def write_etag(etag):
 def write_content_length(length):
     sys.stderr.write('content-length: %s\n' % length)
 
+def write_content_type(type):
+    sys.stderr.write('content-type: %s\n' % type)
+
 def write_body(options, data):
     options.output_file.write(data)
     options.output_file.flush()
@@ -492,18 +511,35 @@ def client_request(client, action, options, node_selector):
     if options.globaltree:
         kwargs['globaltree'] = True
     kwargs['filename'] = options.filename
+    kwargs['etag'] = options.etag
+    headers = {}
+    for h in options.headers:
+        if ':' not in h:
+            headers[h] = None
+        else:
+            k, v = h.split(':', 1)
+            headers[k] = v
+    kwargs['headers'] = headers
     try:
         if action in ['get', 'delete']:
-            return getattr(client, action)(options.app, node_selector, **kwargs)
+            return getattr(client, '_' + action)(options.app, node_selector, **kwargs)
         elif action in update_actions:
-            return getattr(client, action)(options.app, options.input_data, node_selector, **kwargs)
+            return getattr(client, '_' + action)(options.app, options.input_data, node_selector, **kwargs)
         else:
             raise ValueError('Unknown action: %r' % action)
-    except HTTPError, ex:
-        return ex
+    finally:
+        pass
 
 def interactive():
     return hasattr(sys.stdin, 'isatty') and sys.stdin.isatty()
+
+def get_exit_code(http_error):
+    if 200 <= http_error <= 299:
+        return 0
+    else:
+        # 1 used by Python
+        # 2 used by optparse
+        return 3
 
 def main():
     if OPT_COMPLETE in sys.argv[-2:]:
@@ -518,9 +554,9 @@ def main():
 
     try:
         result = client_request(client, action, options, node_selector)
-    except AlreadyExists, ex:
-        sys.exit(ex)
-    if isinstance(result, addinfourl) and result.code==401 and not options.password and interactive():
+    except (urllib2.URLError, HTTPException), ex:
+        sys.exit('FATAL: %s: %s' % (type(ex).__name__, ex))
+    if result.status==401 and not options.password and interactive():
         authreq = result.headers.get('www-authenticate')
         if authreq:
             mo = urllib2.AbstractBasicAuthHandler.rx.search(authreq)
@@ -530,22 +566,15 @@ def main():
                 options.password = getPassword('Password (realm=%s): ' % realm)
                 client = make_xcapclient(options)
                 result = client_request(client, action, options, node_selector)
-    if isinstance(result, Resource):
-        write_etag(result.etag)
-        write_content_length(len(result))
-        write_body(options, result)
-        assert action == 'get', action
-    elif isinstance(result, addinfourl):
-        sys.stderr.write('%s %s\n' % (result.code, result.msg))
-        data = result.read()
-        write_etag(result.headers.get('etag'))
-        if data:
-            write_content_length(len(data))
-            write_body(options, data)
-        if result not in [200, 201]:
-            sys.exit(1)
-    else:
-        sys.exit('%s: %s' % (result.__class__.__name__, result))
+    if not (result.status==200 and action=='get'):
+        sys.stderr.write('%s %s\n' % (result.status, result.reason))
+    write_etag(result.headers.get('etag'))
+    if result.headers.get('content-type'):
+        write_content_type(result.headers['content-type'])
+    if result.body:
+        write_content_length(len(result.body))
+        write_body(options, result.body)
+    sys.exit(get_exit_code(result.status))
 
 if __name__ == '__main__':
     main()

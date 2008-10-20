@@ -1,41 +1,30 @@
-#!/usr/bin/env python
-"urllib2-based XCAP client"
-
-import urllib2
-from urllib2 import HTTPError, URLError, addinfourl
-
-# Q: where's asynchronous twisted-based client?
-# A: Twisted implementation of http client in both twisted-web and twisted-web2
-#    packages seems rather incomplete. So, it is easier to implement
-#    a client using a nice blocking API, then wrap it in a worker thread and thus get
-#    an unblocking one.
-
-AGENT = 'xcapclient.py'
+from xcaplib import __version__
+from xcaplib.httpclient import HTTPClient
+from xcaplib.error import HTTPError, AlreadyExists
 
 __all__ = ['Resource',
            'Document',
            'Element',
            'AttributeValue',
            'NSBindings',
-           'XCAPClient',
-           'HTTPError',
-           'URLError',
-           'addinfourl',
-           'AlreadyExists']
+           'XCAPClient']
+
+DEFAULT_HEADERS = {'User-Agent': 'python-xcaplib/%s' % __version__}
 
 class Resource(str):
     """Result of XCAP GET request: document + etag"""
 
-    def __new__(cls, source, _etag, _content_type=None):
+    def __new__(cls, source, _etag, _content_type=None, _response=None):
         return str.__new__(cls, source)
 
-    def __init__(self, _source, etag, content_type=None):
+    def __init__(self, _source, etag, content_type=None, response=None):
         self.etag = etag
         if content_type is not None:
             self.content_type = content_type
+        self.response = response
 
     @staticmethod
-    def get_class(content_type):
+    def get_class_for_type(content_type):
         "For given content-type, return an appropriate subclass of Resource"
         if content_type == Element.content_type:
             return Element
@@ -44,10 +33,10 @@ class Resource(str):
         elif content_type == NSBindings.content_type:
             return NSBindings
         else:
-            return lambda source, etag: Document(source, etag, content_type)
+            return lambda source, etag, response: Document(source, etag, content_type, response)
 
     @staticmethod
-    def get_content_type(node):
+    def get_content_type_for_node(node):
         "For given node selector, return an appropriate content-type for PUT request"
         if node is None:
             return None
@@ -82,118 +71,6 @@ class AttributeValue(Resource):
 class NSBindings(Resource):
     content_type = 'application/xcap-ns+xml'
 
-
-class HTTPRequest(urllib2.Request):
-    """Hack urllib2.Request to support PUT and DELETE methods."""
-    
-    def __init__(self, url, method="GET", data=None, headers={},
-                 origin_req_host=None, unverifiable=False):
-        urllib2.Request.__init__(self,url,data,headers,origin_req_host,unverifiable)
-        self.url = url
-        self.method = method
-    
-    def get_method(self):
-        return self.method
-
-    def format(self):
-        s = '%s %s\n' % (self.get_method(), self.get_full_url())
-        s += '\n'.join(("%s: %s" % x for x in self.header_items()))
-        return s
-
-def parse_etag_value(s):
-    if s is None:
-        return s
-    if len(s)>1 and s[0]=='"' and s[-1]=='"':
-        return s[1:-1]
-    else:
-        raise ValueError('Cannot parse etag header value: %r' % s)
-
-
-# XCAPClient uses HTTPConnectionWrapper-like class for HTTP handling.
-# if HTTPConnectionWrapper blocks, XCAPClient should blocks,
-# if it's not (returning Deferred), XCAPClient is async as well
-# This means XCAPClient doesn't look into results of HTTP resuests.
-class HTTPConnectionWrapper(object):
-
-    def __init__(self, base_url, user, password=None, auth=None):
-        self.base_url = base_url
-        if self.base_url[-1:]!='/':
-            self.base_url += '/'
-
-        self.username, self.domain = user.split('@')
-        self.password = password
-
-        handlers = []
-
-        def add_handler(klass):
-            handler = klass()
-            handler.add_password(self.domain, self.base_url, self.username, password)
-            handlers.append(handler)
-        
-        if auth == 'basic':
-            add_handler(urllib2.HTTPBasicAuthHandler)
-        elif auth == "digest":
-            add_handler(urllib2.HTTPDigestAuthHandler)
-        elif password is not None:
-            add_handler(urllib2.HTTPDigestAuthHandler)
-            add_handler(urllib2.HTTPBasicAuthHandler)
-        self.opener = urllib2.build_opener(*handlers)
-
-    def request(self, method, path, headers=None, data=None, etag=None):
-        if path[:1]=='/':
-            path = path[1:]
-        if headers is None:
-            headers = {}
-        if etag is not None:
-            headers['If-Match'] = '"' + etag + '"' # XXX use quoteString instead?
-        url = self.base_url+path
-        req = HTTPRequest(url, method=method, headers=headers, data=data)
-        try:
-            response = self.opener.open(req)
-            response.req = req
-            response.etag = parse_etag_value(response.headers.get('etag'))
-            return response
-            # contrary to what documentation for urllib2 says, this can return addinfourl
-            # instance instead of HTTPError. This addinfourl object has all the relevant
-            # attributes (code, msg etc).
-        except HTTPError, e:
-            e.req = req
-            e.etag = parse_etag_value(e.hdrs.get('etag'))
-            if 200 <= e.code <= 299:
-                return e
-            raise
-
-    def get(self, path, headers=None, etag=None):
-        response = self.request('GET', path, headers, None, etag)
-        if 200 <= response.code <= 299:
-            content_type = response.headers.get('content-type')
-            klass = Resource.get_class(content_type)
-            return klass(response.read(), response.etag)
-        else:
-            raise response
-
-class Error(Exception):
-    pass
-
-class AlreadyExists(Error):
-    def __new__(cls, application, node=None):
-        if node is None:
-            return Error.__new__(DocumentAlreadyExists, application, node)
-        else:
-            return Error.__new__(NodeAlreadyExists, application)
-
-    def __init__(self, application, node=None):
-        self.application = application
-        self.node = node
-
-class DocumentAlreadyExists(AlreadyExists):
-    def __str__(self):
-        return 'Document %r already exists' % self.application
-
-class NodeAlreadyExists(AlreadyExists):
-    def __str__(self):
-        return 'Node %r already exists in %r' % (self.node, self.application)
-
 def get_path(xcap_user_id, application, node, globaltree=False, filename=None):
     if filename is None:
         filename = 'index'
@@ -207,48 +84,93 @@ def get_path(xcap_user_id, application, node, globaltree=False, filename=None):
         path += '~~' + node
     return path
 
+class XCAPClientBase(object):
 
-class XCAPClient(object):
-
-    HTTPConnectionWrapper = HTTPConnectionWrapper
-
-    def __init__(self, root, user, password=None, auth=None, connection=None):
+    def __init__(self, root, sip_address, password=None, auth=None):
         self.root = root
         if self.root[-1:] == '/':
             self.root = self.root[:-1]
-        if user[:-4] == 'sip:':
-            user = user[4:]
-        self.user = user
-        if connection is None:
-            self.con = self.HTTPConnectionWrapper(self.root, user, password, auth)
-        else:
-            self.con = connection
+        if sip_address[:-4] == 'sip:':
+            sip_address = sip_address[4:]
+        self.sip_address = sip_address
+        self.con = HTTPClient(self.root, self.sip_address, password, auth=auth)
 
-    def get_url(self, application, node, **kwargs):
-        return (self.root or '') + get_path(self.user, application, node, **kwargs)
-
-    def get(self, application, node=None, etag=None, headers=None, **kwargs):
-        path = get_path(self.user, application, node, **kwargs)
-        return self.con.get(path, etag=etag, headers=headers)
-
-    def put(self, application, resource, node=None, etag=None, headers=None, **kwargs):
-        path = get_path(self.user, application, node, **kwargs)
+    def _update_headers(self, headers):
         if headers is None:
             headers = {}
+        for k, v in DEFAULT_HEADERS.iteritems():
+            headers.setdefault(k, v)
+        return headers
+
+    def get_url(self, application, node, **kwargs):
+        return (self.root or '') + get_path(self.sip_address, application, node, **kwargs)
+
+    def _get(self, application, node=None, etag=None, headers=None, **kwargs):
+        headers = self._update_headers(headers)
+        path = get_path(self.sip_address, application, node, **kwargs)
+        return self.con.request('GET', path, headers=headers, etag=etag)
+
+    def _put(self, application, resource, node=None, etag=None, headers=None, **kwargs):
+        headers = self._update_headers(headers)
+        path = get_path(self.sip_address, application, node, **kwargs)
         if 'Content-Type' not in headers:
-            content_type = Resource.get_content_type(node)
+            content_type = Resource.get_content_type_for_node(node)
             if content_type:
                 headers['Content-Type'] = content_type
         return self.con.request('PUT', path, headers, resource, etag=etag)
 
-    def delete(self, application, node=None, etag=None, headers=None, **kwargs):
-        path = get_path(self.user, application, node, **kwargs)
+    def _delete(self, application, node=None, etag=None, headers=None, **kwargs):
+        headers = self._update_headers(headers)
+        path = get_path(self.sip_address, application, node, **kwargs)
         return self.con.request('DELETE', path, etag=etag, headers=headers)
+
+def parse_etag_header(s):
+    if s is None:
+        return s
+    if len(s)>1 and s[0]=='"' and s[-1]=='"':
+        return s[1:-1]
+    else:
+        raise ValueError('Cannot parse etag header value: %r' % s)
+
+def make_resource_from_httperror(response):
+    if 200 <= response.status <= 299:
+        content_type = response.headers.get('content-type')
+        klass = Resource.get_class_for_type(content_type)
+        etag = parse_etag_header(response.headers.get('etag'))
+        return klass(response.body, etag, response)
+    else:
+        raise HTTPError(response)
+
+class XCAPClient(XCAPClientBase):
+
+    def get(self, *args, **kwargs):
+        "Return Resource instance on success response, raise HTTPError otherwise"
+        return make_resource_from_httperror(self._get(self, *args, **kwargs))
+
+    def put(self, *args, **kwargs):
+        "Return True if document was created, False if document was replaced, raise HTTPError otherwise"
+        response = self._put(*args, **kwargs)
+        if response.status == 200:
+            return False
+        elif response.status == 201:
+            return True
+        elif 200 <= response.status <= 299:
+            return None
+        raise HTTPError(response)
+
+    def delete(self, *args, **kwargs):
+        "Return None on success response, raise HTTPError otherwise"
+        response = self._delete(*args, **kwargs)
+        if response.status == 200:
+            return
+        raise HTTPError(response)
 
     def replace(self, application, resource, node=None, etag=None, **kwargs):
         """check that the already exists. if so, PUT.
         Return (old_resource, reply to PUT)
         """
+        # XXX pointless function, since in real usage we'll have etag and just
+        # do conditional PUT?
         old = self.get(application, node, etag, **kwargs)
         res = self.put(application, resource, node, old.etag, **kwargs)
         return (old, res)
@@ -262,7 +184,7 @@ class XCAPClient(object):
         try:
             self.get(application, **kwargs)
         except HTTPError, ex:
-            if ex.code == 404:
+            if ex.status == 404:
                 # how to ensure insert?
                 # 1. make openxcap to supply fixed tag into 404, like ETag: "none"
                 # and understand If-Match: "none" as intent to insert.
@@ -290,13 +212,13 @@ class XCAPClient(object):
             try:
                 element = self.get(application, node, document.etag, **kwargs)
             except HTTPError, ex:
-                if etag is None and ex.code == 412:
+                if etag is None and ex.status == 412:
                     continue
-                elif ex.code == 404:
+                elif ex.status == 404:
                     try:
                         return self.put(application, resource, node, document.etag, **kwargs)
                     except HTTPError, ex:
-                        if etag is None and ex.code == 412:
+                        if etag is None and ex.status == 412:
                             continue
                         else:
                             raise
@@ -304,3 +226,5 @@ class XCAPClient(object):
                     raise
             else:
                 raise AlreadyExists(application, node)
+
+
