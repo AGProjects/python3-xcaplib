@@ -513,8 +513,8 @@ def main():
 
     options, action, node_selector = parse_args()
     client = make_xcapclient(options)
-    sys.stderr.write('url: %s\n' % client.get_url(options.app, node_selector,
-                                                  globaltree=options.globaltree, filename=options.filename))
+    url = client.get_url(options.app, node_selector, globaltree=options.globaltree, filename=options.filename)
+    sys.stderr.write('%s %s\n' % (action, url))
 
     try:
         result = client_request(client, action, options, node_selector)
