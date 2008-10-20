@@ -78,25 +78,6 @@ class OptionParser_NoExit(optparse.OptionParser):
     def error(self, msg):
         raise ValueError(msg)
 
-class User:
-
-    def __init__(self, username, domain=None, password=None):
-        self.username = username
-        self.domain = domain
-        self.password = password
-
-    def __str__(self):
-        if self.password is None:
-            return '%s@%s' % (self.username, self.domain)
-        else:
-            return '%s:%s@%s' % (self.username, self.password, self.domain)
-
-    def __repr__(self):
-        return '%s(%r, %r, %r)' % (self.__class__.__name__, self.username, self.domain, self.password)
-
-    def without_password(self):
-        return '%s@%s' % (self.username, self.domain)
-
 
 class Auth:
 
@@ -113,8 +94,6 @@ class Account(ConfigSection):
         'password' : str}
     sip_address = ''
     password = None
-    username = ''
-    domain = ''
     auth = None
     xcap_root = ''
 
@@ -149,10 +128,6 @@ def setup_parser_client(parser):
 
     help = "SIP address of the user in the form username@domain"
     parser.add_option("--sip-address", default=Account.sip_address, help=help)
-
-    # the older variant of sip_address: supply username and domain independently
-    parser.add_option('--username', default=Account.username, help=optparse.SUPPRESS_HELP)
-    parser.add_option('--domain',   default=Account.domain, help=optparse.SUPPRESS_HELP)
 
     help = 'password to use if authentication is required. If not supplied will be asked interactively'
     parser.add_option('-p', '--password', default=Account.password, help=help)
@@ -373,18 +348,8 @@ def fix_options(options):
     if not options.xcap_root:
         sys.exit('Please specify XCAP root with --xcap-root. You can also put the default root in %s.' % CONFIG_FILE)
 
-    if options.sip_address:
-        if options.username:
-            sys.stderr.write('Ignoring "username" when "sip-address" is present.\n')
-        if options.domain:
-            sys.stderr.write('Ignoring "domain" when "sip-address" is present.\n')
-    else:
-        if options.username and options.domain:
-            options.sip_address = options.username + '@' + options.domain
-        else:
-            sys.exit('Please specify --sip-address. You can also put the default sip_address in %s.' % CONFIG_FILE)
-
-    options.username, options.domain = options.sip_address.split('@')
+    if not options.sip_address:
+        sys.exit('Please specify --sip-address. You can also put the default sip_address in %s.' % CONFIG_FILE)
 
 def set_globaltree(options):
 
@@ -487,9 +452,7 @@ def parse_args():
     return options, action, node_selector
 
 def make_xcapclient(options, XCAPClient=XCAPClient):
-    user = User(options.username, options.domain, options.password)
-    return XCAPClient(options.xcap_root, user.without_password(),
-                      user.password, options.auth)
+    return XCAPClient(options.xcap_root, options.sip_address, options.password, options.auth)
 
 def write_etag(etag):
     if etag:
