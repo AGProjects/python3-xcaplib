@@ -138,6 +138,9 @@ def setup_parser_client(parser):
             "If not supplied, the section Account will be read.")
     parser.add_option("-a", "--account-name", type="string", help=help, metavar="NAME")
 
+    parser.add_option("--show-config", action="store_true", default=False,
+                      help="show options from the configuration file; use together with --account-name")
+
     help = 'XCAP root, e.g. https://xcap.example.com/xcap-root'
 
     parser.add_option("--xcap-root", help=help, default=Account.xcap_root)
@@ -153,11 +156,7 @@ def setup_parser_client(parser):
     parser.add_option('-p', '--password', default=Account.password, help=help)
 
     help="authentification type, basic, digest or none"
-    parser.add_option("--auth", help=help, default=optparse.SUPPRESS_HELP)
-
-    parser.add_option("--show-config", action="store_true", default=False,
-                      help="show options from the configuration file; use together with --account-name")
-
+    parser.add_option("--auth", help=optparse.SUPPRESS_HELP)
 
 # parameters of the request to perform, specific to this script
 def setup_parser_request(parser):
