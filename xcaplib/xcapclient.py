@@ -130,6 +130,7 @@ def read_default_options(account_section='Account'):
     else:
         return dict((k, v) for (k, v) in Account.__dict__.iteritems() if k[:1]!='_' and v)
 
+# parameters of the client; may be used by other clients (e.g. openxcap test system)
 def setup_parser_client(parser):
 
     help = ("The account name from which to read account settings. "
@@ -158,12 +159,12 @@ def setup_parser_client(parser):
                       help="show options from the configuration file; use together with --account-name")
 
 
-def setup_parser(parser):
-    help="Application Unique ID. There's no default value; however, it will be " + \
-         "guessed from NODE-SELECTOR (when present) or from the input file (when action is PUT). " + \
+# parameters of the request to perform, specific to this script
+def setup_parser_request(parser):
+    help="Application Unique ID. There's no default value; however, it may be " + \
+         "guessed from NODE-SELECTOR or from the input file. " + \
          "Known apps: %s" % ', '.join(apps)
     parser.add_option("--app", dest='app', help=help)
-
     parser.add_option("--filename", dest='filename')
 
     setup_parser_client(parser)
