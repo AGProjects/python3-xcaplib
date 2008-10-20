@@ -24,12 +24,11 @@ class HTTPRequest(urllib2.Request):
 
 class HTTPClient(object):
 
-    def __init__(self, base_url, userid=None, password=None, auth=None):
+    def __init__(self, base_url, username, domain, password=None, auth=None):
         self.base_url = base_url
         if self.base_url[-1:]!='/':
             self.base_url += '/'
 
-        username, domain = userid.split('@')
         handlers = []
 
         def add_handler(klass):

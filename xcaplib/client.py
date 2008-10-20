@@ -90,10 +90,11 @@ class XCAPClientBase(object):
         self.root = root
         if self.root[-1:] == '/':
             self.root = self.root[:-1]
-        if sip_address[:-4] == 'sip:':
-            sip_address = sip_address[4:]
         self.sip_address = sip_address
-        self.con = HTTPClient(self.root, self.sip_address, password, auth=auth)
+        if sip_address[:4] == 'sip:':
+            sip_address = sip_address[4:]
+        username, domain = sip_address.split('@', 1)
+        self.con = HTTPClient(self.root, username, domain, password, auth=auth)
 
     def _update_headers(self, headers):
         if headers is None:
