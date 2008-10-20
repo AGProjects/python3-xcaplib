@@ -108,12 +108,12 @@ class Auth:
 class Account(ConfigSection):
     _datatypes = {
         'auth' : Auth,
-        'password' : str }
+        'password' : str}
     sip_address = ''
     password = None
     username = ''
     domain = ''
-    auth = ''
+    auth = None
     xcap_root = ''
 
 def get_account_section(account_name=None):
