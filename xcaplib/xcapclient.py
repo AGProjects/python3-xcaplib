@@ -427,6 +427,9 @@ def parse_args():
     if not argv:
         sys.exit('Type %s -h for help.' % sys.argv[0])
 
+    if '--global' in argv:
+        sys.exit('Option --global is deprecated. Use -c global instead.')
+
     parser = optparse.OptionParser(usage=__doc__, formatter=IndentedHelpFormatter())
     setup_parser(parser)
     options, args = parser.parse_args(argv)
