@@ -553,6 +553,8 @@ def main():
     if OPT_COMPLETE in sys.argv[-2:]:
         return run_completion(OPT_COMPLETE)
     elif '--debug-completions' in sys.argv[-2:]:
+        global logfile
+        logfile = sys.stderr
         return run_completion('--debug-completions', raise_ex=True)
 
     options, action, node_selector = parse_args()
