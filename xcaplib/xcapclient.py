@@ -574,7 +574,7 @@ def main():
             mo = urllib2.AbstractBasicAuthHandler.rx.search(authreq)
             if mo:
                 options.auth, realm = mo.groups()
-                sys.stderr.write('Server requested authentication, but no password was provided.\n')
+                #sys.stderr.write('Server requested authentication, but no password was provided.\n')
                 options.password = getPassword('Password (realm=%s): ' % realm)
                 client = make_xcapclient(options)
                 result = client_request(client, action, options, node_selector)
