@@ -1,5 +1,3 @@
-- Add sip: before user@domain to the XUI in each request
 - Make it work in async mode, urllib is blocking
-- Add dump of HTTP headers (requests and responses) same as OpenXCAP
-- Don't print stacktrace for HTTP errors
+- even after asked for password, xcapclient still sends request without authorization first
 
