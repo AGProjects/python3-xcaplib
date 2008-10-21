@@ -18,7 +18,7 @@ class must_raise:
             for (k, v) in self.kwargs.items():
                 if getattr(exc_value, k, None)!=v:
                     return False
-            return True
+            return True # suppress the exception
 
 def main():
     root = 'http://10.1.1.3:8000/xcap-root'
@@ -49,7 +49,7 @@ def main():
     bob_uri = 'sip:bob@example.com'
     node_selector = '/resource-lists/list/entry[@uri="%s"]' % bob_uri
 
-    # replace an element (when there isn't one)
+    # try to replace an element (when there isn't one)
     bob1 = '<entry uri="%s"><display-name>The Bob</display-name></entry>' % bob_uri
     with must_raise(HTTPError, status=404) as r:
         print client.replace('resource-lists', bob1, node_selector)
@@ -63,7 +63,7 @@ def main():
     with must_raise(AlreadyExists) as r:
         print client.insert('resource-lists', bob2, node_selector)
 
-    # replace an element, check etag by the way, it should be equal to that of last result
+    # replace an element, check etag by the way, it should be equal to that of the last result
     res = client.put('resource-lists', bob1, node_selector, etag=res.etag)
     assert res.status == 200, (res.status, res)
 
