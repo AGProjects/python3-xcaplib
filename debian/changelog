@@ -1,3 +1,38 @@
+python-xcaplib (1.0.8) unstable; urgency=low
+
+  * append / before ~~ as examples in RFC do
+  * put sip: into the URL even if sip_address doesn't contain it
+  * added -d, --dump option that prints http traffic to stderr
+  * sip address is pasted into URL as provided by --sip-address option, i.e. with sip: prefix if available
+  * report "section not found" error not only if --show-config option was provided but on normal operation also
+  * added a docstring for must_raise class
+  * fixed test_client.py and simplifed it a bit
+  * added __str__ for HTTPError
+  * made put and delete methods return HTTPResponse as before
+  * added etag property to HTTPResponse
+  * added __str__ for HTTPResponse
+  * test_client.py bug fixed in must_raise: subclasses were not handled properly
+  * bug fix: typo in XCAPClient.get()
+  * removed support for --username and --domain as an alternative to --sip-address
+  * HTTPClient accepts separate arguments - username and domain, not userid
+  * bug fixed: sip: prefix was not parsed correctly
+  * write internal logs to stderr when --debug-completions
+  * warn about --global being deprecated
+  * moved http code to httclient.py, exceptions to error.py
+  * use python-xcaplib/VERSION as User-Agent
+  * save response in Resource instances
+  * added _get, _put and _delete methods which always return HTTPResponse object.
+  * added -c, --context option. --global is deprecated, use -c global instead
+  * added --etag option
+  * added hidden --add-header option
+  * made xcapclient catch urlib2.URLError and httplib.HTTPException
+  * made --auth option really hidden from help. moved --show-config upper
+  * changed default value of Account.auth to None
+  * fixed AttributeError: 'NoneType' object has no attribute 'has_key' that was throwed if config was missing
+  * HTTPError doesn't always have 'headers' attribute but always has 'hdrs'
+
+ -- Adrian Georgescu <ag@ag-projects.com>  Tue, 21 Oct 2008 18:13:07 +0200
+
 python-xcaplib (1.0.7) unstable; urgency=high
 
   * fixed NameError introduced in 1.0.6
