@@ -13,9 +13,8 @@ class must_raise:
         pass
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type is None:
-            assert False, 'expecting exception %s' % self.klass.__name__
-        elif issubclass(exc_type, self.klass):
+        assert exc_type is not None, 'expecting exception %s' % self.klass.__name__
+        if issubclass(exc_type, self.klass):
             for (k, v) in self.kwargs.items():
                 if getattr(exc_value, k, None)!=v:
                     return False
