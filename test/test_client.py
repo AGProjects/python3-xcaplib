@@ -4,6 +4,25 @@ from xcaplib.client import XCAPClient, Document
 from xcaplib.error import HTTPError, AlreadyExists
 
 class must_raise:
+    """
+    >>> with must_raise(Exception):
+    ...    # this code block must raise an exception
+    ...    x = 2+2
+    Traceback (most recent call last):
+     ...
+    AssertionError: expecting exception Exception
+
+    The exception raised must be of the proper type
+    >>> with must_raise(ValueError):
+    ...     1/0
+    Traceback (most recent call last):
+     ...
+    ZeroDivisionError: integer division or modulo by zero
+
+    The parameter of must_raise is a base class of the errors that should be suppressed
+    >>> with must_raise(ArithmeticError):
+    ...     1/0 # ZeroDivisionError is a subclass of ArithmeticError
+    """
 
     def __init__(self, klass, **kwargs):
         self.klass = klass
