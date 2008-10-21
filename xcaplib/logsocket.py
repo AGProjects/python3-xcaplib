@@ -60,7 +60,7 @@ class logging_socket(_realsocket):
         self.__log_send(data)
         return result
     # XXX for tcp there's also recv_into
-    # QQQ for udp there're also recvfrom, recv_into, recvfrom_into, sendto
+    # QQQ for udp there're also recvfrom, recvfrom_into, sendto
 
 def _install():
     import socket
