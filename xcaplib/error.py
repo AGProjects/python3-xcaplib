@@ -9,6 +9,9 @@ class HTTPError(RequestError):
     def __getattr__(self, item):
         return getattr(self.response, item)
 
+    def __str__(self):
+        return str(self.response)
+
 # XXX subclass HTTPError for all useful error responses - 404, 401, 400, 409
 # XXX subclass 409 for xcap errors like in xcap.errors
 
