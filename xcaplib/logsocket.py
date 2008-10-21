@@ -17,7 +17,7 @@ class recv_buffer:
 
     @classmethod
     def append(cls, socket, data):
-        if cls.socket and socket is cls.socket:
+        if socket is cls.socket:
             cls.buf += data
         else:
             cls.flush()
