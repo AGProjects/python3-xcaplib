@@ -89,6 +89,12 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
   This will print the document you've just put, along with its tag.
 
+  or
+  
+  xcapclient --app xcap-caps get
+
+  will print the capabilities of the XCAP server.	
+
 
   c. DELETE
 
