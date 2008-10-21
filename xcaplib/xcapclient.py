@@ -368,16 +368,15 @@ def set_globaltree(options):
 
 def update_options_from_config(options):
     default_options = read_default_options(get_account_section(options.account_name))
+    if options.account_name and default_options is None:
+        sys.exit('Section [%s] was not found in %s' % (get_account_section(options.account_name), CONFIG_FILE))
 
     if options.show_config:
-        if default_options is None:
-            sys.exit('Section [%s] was not found in %s' % (get_account_section(options.account_name), CONFIG_FILE))
-        else:
-            print "Configuration file: %s" % CONFIG_FILE
-            print '[%s]' % get_account_section(options.account_name)
-            for x in default_options.iteritems():
-                print '%s = %s' % x
-            sys.exit(0)
+        print "Configuration file: %s" % CONFIG_FILE
+        print '[%s]' % get_account_section(options.account_name)
+        for x in default_options.iteritems():
+            print '%s = %s' % x
+        sys.exit(0)
 
     if default_options is not None:
         options._update_careful(default_options)
