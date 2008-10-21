@@ -71,6 +71,16 @@ class HTTPClient(object):
         except urllib2.HTTPError, e:
             return convert_urllib2_HTTPError(e)
 
+
+def parse_etag_header(s):
+    if s is None:
+        return s
+    if len(s)>1 and s[0]=='"' and s[-1]=='"':
+        return s[1:-1]
+    else:
+        raise ValueError('Cannot parse etag header value: %r' % s)
+
+
 class HTTPResponse(object):
 
     def __init__(self, url, status, reason, headers, body):
@@ -78,7 +88,23 @@ class HTTPResponse(object):
         self.status = status
         self.reason = reason
         self.headers = headers
+        if self.headers is None:
+            self.headers = {}
         self.body = body
+
+    @property
+    def etag(self):
+        return parse_etag_header(self.headers.get('ETag'))
+
+    def __str__(self):
+        result = "%s %s <%s>" % (self.status, self.reason, self.url)
+        for k, v in self.headers.items():
+            result += '\n%s: %s' % (k, v)
+        if self.body:
+            result += '\n\n'
+            result += self.body
+            result += '\n'
+        return result
 
 def convert_urllib2_HTTPError(x):
     len = x.hdrs.get('content-length')

@@ -125,49 +125,36 @@ class XCAPClientBase(object):
         path = get_path(self.sip_address, application, node, **kwargs)
         return self.con.request('DELETE', path, etag=etag, headers=headers)
 
-def parse_etag_header(s):
-    if s is None:
-        return s
-    if len(s)>1 and s[0]=='"' and s[-1]=='"':
-        return s[1:-1]
-    else:
-        raise ValueError('Cannot parse etag header value: %r' % s)
-
 def make_resource_from_httperror(response):
     if 200 <= response.status <= 299:
         content_type = response.headers.get('content-type')
         klass = Resource.get_class_for_type(content_type)
-        etag = parse_etag_header(response.headers.get('etag'))
-        return klass(response.body, etag, response)
+        return klass(response.body, response.etag, response)
     else:
         raise HTTPError(response)
 
 class XCAPClient(XCAPClientBase):
 
     def get(self, *args, **kwargs):
-        "Return Resource instance on success response, raise HTTPError otherwise"
+        "Return Resource instance on success, raise HTTPError otherwise"
         return make_resource_from_httperror(self._get(*args, **kwargs))
 
     def put(self, *args, **kwargs):
-        "Return True if document was created, False if document was replaced, raise HTTPError otherwise"
+        "Return HTTPResponse on success, raise HTTPError otherwise"
         response = self._put(*args, **kwargs)
-        if response.status == 200:
-            return False
-        elif response.status == 201:
-            return True
-        elif 200 <= response.status <= 299:
-            return None
+        if 200 <= response.status <= 299:
+            return response
         raise HTTPError(response)
 
     def delete(self, *args, **kwargs):
-        "Return None on success response, raise HTTPError otherwise"
+        "Return HTTPResponse on success, raise HTTPError otherwise"
         response = self._delete(*args, **kwargs)
-        if response.status == 200:
-            return
+        if 200 <= response.status <= 299:
+            return response
         raise HTTPError(response)
 
     def replace(self, application, resource, node=None, etag=None, **kwargs):
-        """check that the already exists. if so, PUT.
+        """check that the node already exists. if so, PUT.
         Return (old_resource, reply to PUT)
         """
         # XXX pointless function, since in real usage we'll have etag and just
