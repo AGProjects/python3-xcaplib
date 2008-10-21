@@ -351,6 +351,9 @@ def fix_options(options):
     if not options.sip_address:
         sys.exit('Please specify --sip-address. You can also put the default sip_address in %s.' % CONFIG_FILE)
 
+    if ':' not in options.sip_address.split('@', 1)[0]:
+        options.sip_address = 'sip:' + options.sip_address
+
 def set_globaltree(options):
 
     if options.context is not None:
