@@ -1,31 +1,18 @@
 from __future__ import with_statement
-import sys
-sys.path[0:0] = ['..']
-from xcaplib.client import *
-from xcaplib.xcapclient import Account, read_xcapclient_cfg
-
-class Result(list):
-    def __iadd__(self, other):
-        self.append(other)
-        return self
+from urllib2 import URLError
+from xcaplib.client import XCAPClient, Document
+from xcaplib.error import HTTPError, AlreadyExists
 
 class must_raise:
 
-    default_args = ['code']
-
-    def __init__(self, klass, *args, **kwargs):
+    def __init__(self, klass, **kwargs):
         self.klass = klass
         self.kwargs = kwargs
-        for (k, v) in zip(self.default_args, args):
-            self.kwargs[k] = v
 
     def __enter__(self):
-        self.result = Result()
-        return self.result
+        pass
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.result:
-            print self.result
         if exc_type is None:
             assert False, 'expecting exception %s' % self.klass.__name__
         elif issubclass(exc_type, self.klass):
@@ -34,14 +21,13 @@ class must_raise:
                     return False
             return True
 
-if __name__ == '__main__':
-
-    root = 'http://127.0.0.1:8000'
-    user = 'alice@example.com'
+def main():
+    root = 'http://10.1.1.3:8000/xcap-root'
+    xcap_user_id = 'sip:alice@example.com'
     password = '123'
-    client = XCAPClient(root, user, password=password)
+    client = XCAPClient(root, xcap_user_id, password=password)
 
-    document = file('../examples/resource-lists.xml').read()
+    document = file('examples/resource-lists.xml').read()
 
     # put the whole document
     client.put('resource-lists', document)
@@ -66,41 +52,40 @@ if __name__ == '__main__':
 
     # replace an element (when there isn't one)
     bob1 = '<entry uri="%s"><display-name>The Bob</display-name></entry>' % bob_uri
-    with must_raise(HTTPError, 404) as r:
-        r += client.replace('resource-lists', bob1, node_selector)
+    with must_raise(HTTPError, status=404) as r:
+        print client.replace('resource-lists', bob1, node_selector)
 
     # insert an element
     bob2 = '<entry uri="%s"/>' % bob_uri
     res = client.insert('resource-lists', bob2, node_selector, etag=res.etag)
-    assert res.code == 201, (res.code, res)
+    assert res.status == 201, (res.status, res)
 
     # insert an element (when there's already one)
     with must_raise(AlreadyExists) as r:
-        r += client.insert('resource-lists', bob2, node_selector)
+        print client.insert('resource-lists', bob2, node_selector)
 
     # replace an element, check etag by the way, it should be equal to that of last result
     res = client.put('resource-lists', bob1, node_selector, etag=res.etag)
-    assert res.code == 200, (res.code, res)
+    assert res.status == 200, (res.status, res)
 
     # delete an element
     res = client.delete('resource-lists', node_selector, etag=res.etag)
-    assert res.code == 200, (res.code, res)
+    assert res.status == 200, (res.status, res)
 
     # common http errors:
-    with must_raise(HTTPError, 404) as r:
-        r += client.delete('resource-lists', node_selector)
+    with must_raise(HTTPError, status=404) as r:
+        print client.delete('resource-lists', node_selector)
 
     # connection errors:
-    client2 = XCAPClient('http://www.fdsdfgh.com:32452', user)
+    client2 = XCAPClient('http://www.fdsdfgh.com:32452', xcap_user_id)
     with must_raise(URLError):
         client2.get('resource-lists')
 
-    read_xcapclient_cfg()
     # https and authentication:
-    with must_raise(HTTPError, 401):
-        XCAPClient(Account.xcap_root, user, 'invalid-password').get('watchers')
+    with must_raise(HTTPError, status=401):
+        XCAPClient(root, xcap_user_id, 'invalid-password').get('watchers')
 
-    watchers = XCAPClient(Account.xcap_root, user, password).get('watchers')
+    watchers = XCAPClient(root, xcap_user_id, password).get('watchers')
     assert isinstance(watchers, Document), `watchers`
     assert watchers.content_type == 'application/xml', watchers.content_type
 
@@ -113,11 +98,14 @@ if __name__ == '__main__':
     got2 = client.get('resource-lists', etag=etag)
     assert document==got2, (document, got2)
 
-    with must_raise(HTTPError, 412) as r:
-        r += client.get('resource-lists', etag=etag + 'xxx')
+    with must_raise(HTTPError, status=412) as r:
+        print client.get('resource-lists', etag=etag + 'xxx')
 
     # conditional DELETE:
-    with must_raise(HTTPError, 412) as r:
-        r += client.delete('resource-lists', etag=etag+'yyy')
+    with must_raise(HTTPError, status=412) as r:
+        print client.delete('resource-lists', etag=etag+'yyy')
 
     client.delete('resource-lists', etag=etag)
+
+if __name__ == '__main__':
+    main()
