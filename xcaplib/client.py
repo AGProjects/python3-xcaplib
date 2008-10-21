@@ -146,7 +146,7 @@ class XCAPClient(XCAPClientBase):
 
     def get(self, *args, **kwargs):
         "Return Resource instance on success response, raise HTTPError otherwise"
-        return make_resource_from_httperror(self._get(self, *args, **kwargs))
+        return make_resource_from_httperror(self._get(*args, **kwargs))
 
     def put(self, *args, **kwargs):
         "Return True if document was created, False if document was replaced, raise HTTPError otherwise"
