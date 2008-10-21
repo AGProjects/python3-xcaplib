@@ -12,7 +12,6 @@ class recv_buffer:
     def flush(cls):
         if cls.socket and cls.buf:
             cls.socket.log_recv(cls.buf)
-            cls.buf = ''
         cls.socket = None
         cls.buf = ''
 
