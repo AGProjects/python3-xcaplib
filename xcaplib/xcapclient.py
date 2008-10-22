@@ -266,7 +266,7 @@ def completion(result, argv, comp_cword):
 
     options, args = parser.parse_args(argv)
     options._update_careful(read_default_options(get_account_section(options.account_name)) or {})
-    fix_options(options)
+    validate_client_configuration(options)
     set_globaltree(options)
 
     if not args:
@@ -337,7 +337,7 @@ class IndentedHelpFormatter(optparse.IndentedHelpFormatter):
         return usage
 
 
-def fix_options(options):
+def validate_client_configuration(options):
     if not options.xcap_root:
         sys.exit('Please specify XCAP root with --xcap-root. You can also put the default root in %s.' % CONFIG_FILE)
 
@@ -376,7 +376,6 @@ def update_options_from_config(options):
 
     if default_options is not None:
         options._update_careful(default_options)
-    fix_options(options)
 
 def parse_args():
     argv = sys.argv[1:]
@@ -391,6 +390,7 @@ def parse_args():
     setup_parser(parser)
     options, args = parser.parse_args(argv)
     update_options_from_config(options)
+    validate_client_configuration(options)
 
     if not args:
         sys.exit('Please provide ACTION.')
