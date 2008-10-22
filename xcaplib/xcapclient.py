@@ -126,7 +126,6 @@ def setup_parser_client(parser):
     help = 'password to use if authentication is required. If not supplied will be asked interactively'
     parser.add_option('-p', '--password', default=Account.password, help=help)
 
-    help="authentification type, basic, digest or none"
     parser.add_option("--auth", help=optparse.SUPPRESS_HELP)
 
 # parameters of the request to perform, specific to this script
