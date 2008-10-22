@@ -20,12 +20,6 @@ try:
     import traceback
     from StringIO import StringIO
     from twisted.python import log as twistedlog
-
-    # prevent application.configuration from installing its SimpleObserver
-    # which prints to stdout all kinds of useless crap from twisted
-    twistedlog.defaultObserver = None
-    # not using twisted anymore? remove it?
-
     from application.configuration import ConfigFile, ConfigSection
 
     try:
