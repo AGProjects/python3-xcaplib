@@ -108,9 +108,9 @@ def read_default_options(account_section='Account'):
 # parameters of the client; may be used by other clients (e.g. openxcap test system)
 def setup_parser_client(parser):
 
-    help = ("The account name from which to read account settings. "
+    help = ("the account name from which to read account settings. "
             "Corresponds to section Account_NAME in the configuration file. "
-            "If not supplied, the section Account will be read.")
+            "If not supplied, the section [Account] will be read.")
     parser.add_option("-a", "--account-name", type="string", help=help, metavar="NAME")
 
     parser.add_option("--show-config", action="store_true", default=False,
@@ -133,19 +133,19 @@ def setup_parser_request(parser):
     help="Application Unique ID. There's no default value; however, it may be " + \
          "guessed from NODE-SELECTOR or from the input file. " + \
          "Known apps: %s" % ', '.join(apps)
-    parser.add_option("--app", dest='app', help=help)
+    parser.add_option("--app", metavar='AUID', help=help)
     parser.add_option("--filename", dest='filename')
-    help='document context, users or global. default is users for everything except xcap-caps'
+    help='document context, users or global; default is users for everything except xcap-caps'
     parser.add_option('-c', '--context', help=help, dest='context', default=None)
-    parser.add_option('--etag', help="Perform a conditional operation", metavar='ETAG')
+    parser.add_option('--etag', help="perform a conditional operation", metavar='ETAG')
     parser.add_option('--add-header', dest='headers',
                       action='append', default=[], help=optparse.SUPPRESS_HELP)
     parser.add_option("-i", dest='input_filename',
                       help="source file for the PUT request; default is <stdin>")
     parser.add_option("-o", dest='output_filename',
-                      help="output file for the server response (successful or rejected); default is <stdout>")
+                      help="output file for the body of the server response (successful or not); default is <stdout>")
     parser.add_option("-d", "--dump", dest='dump', action='store_true', default=False,
-                      help="print http traffic to stderr")
+                      help="print HTTP traffic to stderr")
 
 def setup_parser(parser):
     setup_parser_client(parser)
