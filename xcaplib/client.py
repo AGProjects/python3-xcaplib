@@ -125,7 +125,7 @@ class XCAPClientBase(object):
         path = get_path(self.sip_address, application, node, **kwargs)
         return self.con.request('DELETE', path, etag=etag, headers=headers)
 
-def make_resource_from_httperror(response):
+def make_resource_from_httpresponse(response):
     if 200 <= response.status <= 299:
         content_type = response.headers.get('content-type')
         klass = Resource.get_class_for_type(content_type)
@@ -137,7 +137,7 @@ class XCAPClient(XCAPClientBase):
 
     def get(self, *args, **kwargs):
         "Return Resource instance on success, raise HTTPError otherwise"
-        return make_resource_from_httperror(self._get(*args, **kwargs))
+        return make_resource_from_httpresponse(self._get(*args, **kwargs))
 
     def put(self, *args, **kwargs):
         "Return HTTPResponse on success, raise HTTPError otherwise"
