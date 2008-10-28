@@ -505,6 +505,10 @@ def get_exit_code(http_error):
         return 3
 
 def main():
+    if sys.argv[0].endswith('-eventlet'):
+        from xcaplib.green import XCAPClient as client_class
+    else:
+        client_class = XCAPClient
     if OPT_COMPLETE in sys.argv[-2:]:
         return run_completion(OPT_COMPLETE)
     elif '--debug-completions' in sys.argv[-2:]:
@@ -515,7 +519,7 @@ def main():
     options, action, node_selector = parse_args()
     if options.dump:
         logsocket._install()
-    client = make_xcapclient(options)
+    client = make_xcapclient(options, XCAPClient=client_class)
     url = client.get_url(options.app, node_selector, globaltree=options.globaltree, filename=options.filename)
     sys.stderr.write('%s %s\n' % (action, url))
 
@@ -531,7 +535,7 @@ def main():
                 options.auth, realm = mo.groups()
                 #sys.stderr.write('Server requested authentication, but no password was provided.\n')
                 options.password = getPassword('Password (realm=%s): ' % realm)
-                client = make_xcapclient(options)
+                client = make_xcapclient(options, XCAPClient=client_class)
                 result = client_request(client, action, options, node_selector)
     if not (result.status==200 and action=='get'):
         sys.stderr.write('%s %s\n' % (result.status, result.reason))
