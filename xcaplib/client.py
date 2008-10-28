@@ -86,6 +86,8 @@ def get_path(xcap_user_id, application, node, globaltree=False, filename=None):
 
 class XCAPClientBase(object):
 
+    HTTPClient = HTTPClient
+
     def __init__(self, root, sip_address, password=None, auth=None):
         self.root = root
         if self.root[-1:] == '/':
@@ -94,7 +96,7 @@ class XCAPClientBase(object):
         if sip_address[:4] == 'sip:':
             sip_address = sip_address[4:]
         username, domain = sip_address.split('@', 1)
-        self.con = HTTPClient(self.root, username, domain, password, auth=auth)
+        self.con = self.HTTPClient(self.root, username, domain, password, auth=auth)
 
     def _update_headers(self, headers):
         if headers is None:

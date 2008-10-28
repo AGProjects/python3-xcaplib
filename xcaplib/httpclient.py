@@ -24,6 +24,9 @@ class HTTPRequest(urllib2.Request):
 
 class HTTPClient(object):
 
+    def build_opener(self, *args):
+        return urllib2.build_opener(*args)
+
     def __init__(self, base_url, username, domain, password=None, auth=None):
         self.base_url = base_url
         if self.base_url[-1:]!='/':
@@ -44,7 +47,7 @@ class HTTPClient(object):
         elif username is not None and password is not None:
             add_handler(urllib2.HTTPDigestAuthHandler)
             add_handler(urllib2.HTTPBasicAuthHandler)
-        self.opener = urllib2.build_opener(*handlers)
+        self.opener = self.build_opener(*handlers)
 
     def request(self, method, path, headers=None, data=None, etag=None):
         """Make HTTP request. Return HTTPResponse instance.
