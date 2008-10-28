@@ -70,7 +70,7 @@ def main():
 
     # try to replace an element (when there isn't one)
     bob1 = '<entry uri="%s"><display-name>The Bob</display-name></entry>' % bob_uri
-    with must_raise(HTTPError, status=404) as r:
+    with must_raise(HTTPError, status=404):
         print client.replace('resource-lists', bob1, node_selector)
 
     # insert an element
@@ -79,7 +79,7 @@ def main():
     assert res.status == 201, (res.status, res)
 
     # insert an element (when there's already one)
-    with must_raise(AlreadyExists) as r:
+    with must_raise(AlreadyExists):
         print client.insert('resource-lists', bob2, node_selector)
 
     # replace an element, check etag by the way, it should be equal to that of the last result
@@ -91,7 +91,7 @@ def main():
     assert res.status == 200, (res.status, res)
 
     # common http errors:
-    with must_raise(HTTPError, status=404) as r:
+    with must_raise(HTTPError, status=404):
         print client.delete('resource-lists', node_selector)
 
     # connection errors:
@@ -116,11 +116,11 @@ def main():
     got2 = client.get('resource-lists', etag=etag)
     assert document==got2, (document, got2)
 
-    with must_raise(HTTPError, status=412) as r:
+    with must_raise(HTTPError, status=412):
         print client.get('resource-lists', etag=etag + 'xxx')
 
     # conditional DELETE:
-    with must_raise(HTTPError, status=412) as r:
+    with must_raise(HTTPError, status=412):
         print client.delete('resource-lists', etag=etag+'yyy')
 
     client.delete('resource-lists', etag=etag)
