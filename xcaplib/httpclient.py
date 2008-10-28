@@ -67,7 +67,7 @@ class HTTPClient(object):
             elif isinstance(response, urllib2.addinfourl):
                 return convert_urllib_addinfourl(response)
             else:
-                raise RuntimeError('urllib2.open returned %s instance' % type(response).__name__)
+                raise RuntimeError('urllib2.open returned %r' % response)
         except urllib2.HTTPError, e:
             return convert_urllib2_HTTPError(e)
 
