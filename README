@@ -59,8 +59,8 @@ http://sip2sip.info, which provides a fully functional OpenXCAP server.
 
 1. Operating on XCAP documents (full document handling)
 
-  In the examples folder thar are sample XCAP XML documents used for the
-  exmaples below:
+  In the examples folder there are sample XCAP XML documents used for the
+  examples below:
 
   a. PUT
 
