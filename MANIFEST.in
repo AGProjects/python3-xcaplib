@@ -1,0 +1,8 @@
+recursive-include debian  changelog compat control copyright pycompat rules
+recursive-include debian  pyversions *.dirs
+recursive-include examples *.xml
+recursive-include bash_completion.d xcapclient
+recursive-include test *.py
+include MANIFEST.in LICENSE TODO config.ini.sample
+prune debian/python-xcaplib
+prune debian/tmp
