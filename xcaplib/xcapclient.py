@@ -4,7 +4,7 @@
   %prog [OPTIONS] --app AUID ACTION [NODE-SELECTOR]
 
   ACTION is an operation to perform: get, replace, insert, put or delete.
-  Presence of NODE-SELECTOR indicates that action is to be performed on an
+  Presence of NODE-SELECTOR indicates that action must be performed on an
   element or an attribute.
 """
 
@@ -109,7 +109,7 @@ def read_default_options(account_section='Account'):
 def setup_parser_client(parser):
 
     help = ("the account name from which to read account settings. "
-            "Corresponds to section Account_NAME in the configuration file. "
+            "Corresponds to section [Account_NAME] in the configuration file. "
             "If not supplied, the section [Account] will be read.")
     parser.add_option("-a", "--account-name", type="string", help=help, metavar="NAME")
 
@@ -434,7 +434,7 @@ def parse_args():
                          (options.input_filename or '<stdin'))
             options.app = get_app_by_input_root_tag(root_tag)
             if options.app is None:
-                sys.exit('Please specify --app. Root tag %r gives in the document %r gives no clue.' % \
+                sys.exit('Please specify --app. Root tag %r in the document %r gives no clue.' % \
                          (root_tag, options.input_filename))
         else:
             sys.exit('Please specify --app or NODE-SELECTOR')
