@@ -1,3 +1,6 @@
+# Copyright (C) 2008-2009 AG Projects. See LICENSE for details.
+#
+
 from xcaplib import __version__
 from xcaplib.httpclient import HTTPClient
 from xcaplib.error import HTTPError, AlreadyExists

@@ -1,3 +1,6 @@
+# Copyright (C) 2008-2009 AG Projects. See LICENSE for details.
+#
+
 """Make HTTP requests. Thin wrapper around urllib2"""
 import urllib2
 

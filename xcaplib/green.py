@@ -1,3 +1,6 @@
+# Copyright (C) 2008-2009 AG Projects. See LICENSE for details.
+#
+
 from eventlet.green.urllib2 import build_opener
 from xcaplib import httpclient
 from xcaplib import client

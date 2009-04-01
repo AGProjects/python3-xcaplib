@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# Copyright (C) 2008-2009 AG Projects. See LICENSE for details.
+#
+
 """
   %prog: Client for managing full or partial XML documents on XCAP servers (RFC 4825)
   %prog [OPTIONS] --app AUID ACTION [NODE-SELECTOR]

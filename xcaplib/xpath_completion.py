@@ -1,3 +1,6 @@
+# Copyright (C) 2008-2009 AG Projects. See LICENSE for details.
+#
+
 from lxml import etree
 from StringIO import StringIO
 from xml.sax.saxutils import quoteattr
