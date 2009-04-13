@@ -30,23 +30,50 @@ The XCAP client example script provided by this package can be used to
 manage documents on an XCAP server.
 
 
-Installation
-------------
+Debian package installation
+--------------------------- 
 
-Prerequisites. See the Prerequisites section of the INSTALL document for
-OpenXCAP server from http://openxcap.org
+Add the following lines to /etc/apt/sources.list
 
-1. Run 'python setup.py install' to install the software in the system
+# AG Projects software
+deb     http://ag-projects.com/debian unstable main
+deb-src http://ag-projects.com/debian unstable main
 
-   Alternatively you can run xcapclient from its local directory.
+Install the AG Projects debian software signing key:
 
-2. Copy config.ini.sample to ~/.sipclient/config.ini and change it accordingly
-   to your XCAP servers configuration. You may set the sip_address,
-   password and xcap root in the configuration. It is possible to override any
-   of the parameters with command-line switch
+wget http://download.ag-projects.com/agp-debian-gpg.key
+apt-key add agp-debian-gpg.key
 
-3. For argument and node-selector bash completion:
-   sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
+After that, run:
+
+sudo apt-get update
+sudo apt-get install python-xcaplib
+
+
+Manual installation
+-------------------
+
+Download the tra archive from http://download.ag-projects.com/XCAP.
+
+Extract the tar archive and run under the newly created directory:
+
+sudo python setup.py install
+
+
+Development version
+-------------------
+
+The source code is managed using darcs version control tool. The darcs
+repository can be fetched with:
+
+darcs get http://devel.ag-projects.com/repositories/python-xcaplib
+
+To obtain the incremental changes after the initial get, go to the
+python-xcaplib directory and run:         
+
+cd python-xcaplib
+darcs pull -a
+
 
 
 Usage
@@ -56,6 +83,16 @@ This software has been tested against OpenXCAP server http://openxcap.org
 
 To test this script you can also register a SIP SIMPLE account on
 http://sip2sip.info, which provides a fully functional OpenXCAP server.
+
+Copy config.ini.sample to ~/.sipclient/config.ini and change it accordingly
+to your XCAP servers configuration. You may set the sip_address, password
+and xcap root in the configuration. It is possible to override any of the
+parameters with command-line switch
+
+For argument and node-selector bash completion: 
+
+sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
+
 
 1. Operating on XCAP documents (full document handling)
 
