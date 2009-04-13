@@ -53,7 +53,7 @@ sudo apt-get install python-xcaplib
 Manual installation
 -------------------
 
-Download the tra archive from http://download.ag-projects.com/XCAP.
+Download the tar archive from http://download.ag-projects.com/XCAP.
 
 Extract the tar archive and run under the newly created directory:
 
