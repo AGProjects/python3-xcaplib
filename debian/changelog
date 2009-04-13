@@ -12,6 +12,7 @@ python-xcaplib (1.0.9) unstable; urgency=low
     (for debugging)
   * removed myself from Uploaders in debian/control to fix lintian warning
     "maintainer also in uploaders"
+  * renamed config ini file to ~/.xcapclient.ini
 
  -- Denis Bilenko <denis@ag-projects.com>  Mon, 13 Apr 2009 18:47:16 +0700
 
