@@ -1,3 +1,20 @@
+python-xcaplib (1.0.9) unstable; urgency=low
+
+  * added green module with eventlet-compatible version of XCAPClient
+  * switched to pysupport from pycentral
+  * changed license to LGPL
+  * added MANIFEST.in
+  * added copyrights
+  * fixed wording in a few text messages
+  * renamed internal function make_resource_from_httperror in
+    make_resource_from_httpresponse in client.py
+  * made xcapclient use green.XCAPClient if renamed to xcapclient-eventlet
+    (for debugging)
+  * removed myself from Uploaders in debian/control to fix lintian warning
+    "maintainer also in uploaders"
+
+ -- Denis Bilenko <denis@ag-projects.com>  Mon, 13 Apr 2009 18:47:16 +0700
+
 python-xcaplib (1.0.8) unstable; urgency=low
 
   * append / before ~~ as examples in RFC do
