@@ -39,7 +39,7 @@ except:
     else:
         raise
 
-CONFIG_FILE = os.path.expanduser('~/.sipclient/config.ini')
+CONFIG_FILE = os.path.expanduser('~/.xcapclient.ini')
 
 # to guess app from /NODE-SELECTOR
 app_by_root_tag = {

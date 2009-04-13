@@ -1,4 +1,4 @@
-# Copy this file to  ~/.sipclient/config.ini 
+# Copy this file to  ~/.xcapclient.ini
 
 # this will be the default account used by xcapclient
 [Account]
