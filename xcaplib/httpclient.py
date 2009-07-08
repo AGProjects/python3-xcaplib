@@ -116,7 +116,7 @@ def convert_urllib2_HTTPError(x):
     len = x.hdrs.get('content-length')
     if len is not None:
         len = int(len)
-    body = x.fp.read(len)
+    body = x.fp.read(len) if x.fp is not None else ''
     return HTTPResponse(x.filename, x.code, x.msg, x.hdrs, body)
 
 def convert_urllib_addinfourl(x):
