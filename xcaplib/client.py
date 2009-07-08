@@ -95,9 +95,9 @@ class XCAPClientBase(object):
         self.root = root
         if self.root[-1:] == '/':
             self.root = self.root[:-1]
-        self.sip_address = sip_address
         if sip_address[:4] == 'sip:':
             sip_address = sip_address[4:]
+        self.sip_address = sip_address
         username, domain = sip_address.split('@', 1)
         self.con = self.HTTPClient(self.root, username, domain, password, auth=auth)
 
