@@ -106,7 +106,7 @@ def read_default_options(account_section='Account'):
     if client_config.get_section(account_section) is None:
         return None
     else:
-        return dict((k, v) for (k, v) in Account.__dict__.iteritems() if k[:1]!='_' and v)
+        return dict((k, getattr(Account, k)) for k in Account.__dict__ if k[:1]!='_' and getattr(Account, k))
 
 # parameters of the client; may be used by other clients (e.g. openxcap test system)
 def setup_parser_client(parser):
