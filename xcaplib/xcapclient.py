@@ -23,7 +23,7 @@ try:
     import traceback
     from StringIO import StringIO
     from twisted.python import log as twistedlog
-    from application.configuration import ConfigFile, ConfigSection
+    from application.configuration import ConfigFile, ConfigSection, ConfigSetting
 
     try:
         from twisted.python.util import getPassword
@@ -86,12 +86,9 @@ class Auth:
 
 
 class Account(ConfigSection):
-    _datatypes = {
-        'auth' : Auth,
-        'password' : str}
     sip_address = ''
-    password = None
-    auth = None
+    password = ConfigSetting(type=str, value=None)
+    auth = ConfigSetting(type=Auth, value=None)
     xcap_root = ''
 
 def get_account_section(account_name=None):
