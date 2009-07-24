@@ -16,6 +16,19 @@ import sys
 OPT_COMPLETE = '--print-completions'
 
 try:
+    package_requirements = {'python-application': '1.1.4'}
+    try:
+        from application.dependency import ApplicationDependencies
+    except:
+        class DependencyError(Exception): pass
+        class ApplicationDependencies(object):
+            def __init__(self, *args, **kwargs):
+                pass
+            def check(self):
+                raise DependencyError("need python-application version %s or higher but it's not installed" % requirements['python-application'])
+    dependencies = ApplicationDependencies(**package_requirements)
+    dependencies.check()
+
     import os
     import urllib2
     from httplib import HTTPException
