@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Denis Bilenko <denis@ag-projects.com>
 Uploaders: Adrian Georgescu <ag@ag-projects.com>, Lucian Stanescu <luci@ag-projects.com>
 Build-Depends: cdbs (>= 0.4.47), debhelper (>= 5.0.42), python-all-dev (>= 2.5.2), python-support
-Standards-Version: 3.8.0
+Standards-Version: 3.8.2
 
 Package: python-xcaplib
 Architecture: all
