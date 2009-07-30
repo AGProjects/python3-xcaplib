@@ -1,3 +1,15 @@
+python-xcaplib (1.0.10) unstable; urgency=low
+
+  * Added 'sip:' prefix to XUI
+  * Fixed handling of bodyless error responses
+  * Fixed handling of configuration data for python-application >= 1.1.2
+  * Replaced use of deprecated _datatypes attribute with ConfigSetting
+  * Added dependency on python-application >= 1.1.4
+  * Replaced python-all-dev build dependency with python
+  * Bumped Standards-Version to 3.8.2
+
+ -- Lucian Stanescu <luci@ag-projects.com>  Mon, 27 Jul 2009 11:39:46 +0300
+
 python-xcaplib (1.0.9) unstable; urgency=low
 
   * added green module with eventlet-compatible version of XCAPClient
