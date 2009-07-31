@@ -112,7 +112,7 @@ def get_account_section(account_name=None):
 
 def read_default_options(account_section='Account'):
     client_config = ConfigFile(CONFIG_FILE)
-    client_config.read_settings(account_section, Account)
+    Account.read(cfgfile=client_config, section=account_section)
     if client_config.get_section(account_section) is None:
         return None
     else:
