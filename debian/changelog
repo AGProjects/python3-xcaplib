@@ -7,6 +7,8 @@ python-xcaplib (1.0.10) unstable; urgency=low
   * Added dependency on python-application >= 1.1.4
   * Replaced python-all-dev build dependency with python
   * Bumped Standards-Version to 3.8.2
+  * Added ${misc:Depends} to debian/control
+  * Replaced use of deprecated ConfigFile.read_settings with ConfigSection.read
 
  -- Lucian Stanescu <luci@ag-projects.com>  Mon, 27 Jul 2009 11:39:46 +0300
 
