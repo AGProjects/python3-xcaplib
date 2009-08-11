@@ -82,12 +82,11 @@ Usage
 This software has been tested against OpenXCAP server http://openxcap.org
 
 To test this script you can also register a SIP SIMPLE account on
-http://sip2sip.info, which provides a fully functional OpenXCAP server.
+http://sip2sip.info, which provides a fully functional XCAP server.
 
-Copy config.ini.sample to ~/.xcapclient.ini and change it accordingly
-to your XCAP servers configuration. You may set the sip_address, password
-and xcap root in the configuration. It is possible to override any of the
-parameters with command-line switch
+Copy xcapclient.ini.sample to ~/.xcapclient.ini and change it accordingly to
+your XCAP server location and credentials. You may set the sip_address,
+password and xcap root in the configuration file.
 
 For argument and node-selector bash completion: 
 
