@@ -6,6 +6,12 @@ sip_address = alice@example.com
 password = 123
 xcap_root = https://xcap.example.com/xcap-root
 
+# this account will be used when running the OpenXCAP test suite
+[Account_test]
+sip_address = alice@example.com
+password = 123
+xcap_root = https://xcap.example.com/xcap-root
+
 # this will be used when -a bob command-line switch is provided
 [Account_bob]
 sip_address = bob@example.com
