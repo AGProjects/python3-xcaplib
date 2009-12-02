@@ -376,11 +376,18 @@ def set_globaltree(options):
             options.globaltree = False
 
 def update_options_from_config(options):
-    default_options = read_default_options(get_account_section(options.account_name))
+    if not options.account_name:
+        default_options = None
+    else:
+        default_options = read_default_options(get_account_section(options.account_name))
+
     if options.account_name and default_options is None:
         sys.exit('Section [%s] was not found in %s' % (get_account_section(options.account_name), CONFIG_FILE))
 
     if options.show_config:
+        default_options = read_default_options(get_account_section(options.account_name))
+        if not default_options:
+            sys.exit("No options were found in '%s' account section." % get_account_section(options.account_name))
         print "Configuration file: %s" % CONFIG_FILE
         print '[%s]' % get_account_section(options.account_name)
         for x in default_options.iteritems():
