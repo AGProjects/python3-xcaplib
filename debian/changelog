@@ -1,3 +1,11 @@
+python-xcaplib (1.0.11) unstable; urgency=low
+
+  * Update name of config file
+  * Don't overwrite command line options with default account options
+  * Added a test account to the sample configuration file
+
+ -- Adrian Georgescu <ag@ag-projects.com>  Fri, 04 Dec 2009 12:00:21 +0100
+
 python-xcaplib (1.0.10) unstable; urgency=low
 
   * Added 'sip:' prefix to XUI
