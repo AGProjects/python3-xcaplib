@@ -1,8 +1,8 @@
 Source: python-xcaplib
 Section: python
 Priority: optional
-Maintainer: Lucian Stanescu <luci@ag-projects.com>
-Uploaders: Adrian Georgescu <ag@ag-projects.com>, Lucian Stanescu <luci@ag-projects.com>
+Maintainer: Saul Ibarra <saul@ag-projects.com>
+Uploaders: Adrian Georgescu <ag@ag-projects.com>, Lucian Stanescu <luci@ag-projects.com>, Dan Pascu <dan@ag-projects.com>
 Build-Depends: cdbs (>= 0.4.47), debhelper (>= 5.0.42), python (>= 2.5.0), python-support
 Standards-Version: 3.8.2
 
