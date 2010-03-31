@@ -4,11 +4,11 @@ Priority: optional
 Maintainer: Saul Ibarra <saul@ag-projects.com>
 Uploaders: Adrian Georgescu <ag@ag-projects.com>, Lucian Stanescu <luci@ag-projects.com>, Dan Pascu <dan@ag-projects.com>
 Build-Depends: cdbs (>= 0.4.47), debhelper (>= 5.0.42), python (>= 2.5.0), python-support
-Standards-Version: 3.8.2
+Standards-Version: 3.8.3
 
 Package: python-xcaplib
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-application (>= 1.1.4), python-xml
+Depends: ${python:Depends}, ${misc:Depends}, python-application (>= 1.1.4), python-lxml
 Description: Python library for managing XML documents on XCAP server
  XCAP protocol allows a client to read, write, and modify application
  configuration data stored in XML format on a server. XCAP maps XML document
