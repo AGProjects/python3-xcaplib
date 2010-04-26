@@ -126,11 +126,8 @@ def setup_parser_client(parser):
             "If not supplied, the section [Account] will be read.")
     parser.add_option("-a", "--account-name", type="string", help=help, metavar="NAME")
 
-    parser.add_option("--show-config", action="store_true", default=False,
-                      help="show options from the configuration file; use together with --account-name")
 
     help = 'XCAP root, e.g. https://xcap.example.com/xcap-root'
-
     parser.add_option("--xcap-root", help=help, default=Account.xcap_root)
 
     help = "SIP address of the user in the form username@domain"
@@ -383,16 +380,6 @@ def update_options_from_config(options):
 
     if options.account_name and default_options is None:
         sys.exit('Section [%s] was not found in %s' % (get_account_section(options.account_name), CONFIG_FILE))
-
-    if options.show_config:
-        default_options = read_default_options(get_account_section(options.account_name))
-        if not default_options:
-            sys.exit("No options were found in '%s' account section." % get_account_section(options.account_name))
-        print "Configuration file: %s" % CONFIG_FILE
-        print '[%s]' % get_account_section(options.account_name)
-        for x in default_options.iteritems():
-            print '%s = %s' % x
-        sys.exit(0)
 
     if default_options is not None:
         options._update_careful(default_options)
