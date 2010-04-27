@@ -104,9 +104,9 @@ def main():
 
     # https and authentication:
     with must_raise(HTTPError, status=401):
-        XCAPClient(root, xcap_user_id, 'invalid-password').get('watchers')
+        XCAPClient(root, xcap_user_id, 'invalid-password').get('org.openxcap.watchers')
 
-    watchers = XCAPClient(root, xcap_user_id, password).get('watchers')
+    watchers = XCAPClient(root, xcap_user_id, password).get('org.openxcap.watchers')
     assert isinstance(watchers, Document), `watchers`
     assert watchers.content_type == 'application/xml', watchers.content_type
 
