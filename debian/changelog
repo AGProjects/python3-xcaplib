@@ -1,3 +1,16 @@
+python-xcaplib (1.0.13) unstable; urgency=low
+
+  * Updated debian Standards-Version to 3.8.4
+  * Removed show-config option
+  * Use 'Account' as the default account if none specified
+  * Updated auto-completed applications
+  * Raised python-application dependency
+  * Overwrite options from config file with command line options
+  * Implement a simple caching DNS resolver for the HTTP requests
+  * Updated watchers application AUID in the test script
+
+ -- Saul Ibarra <saul@ag-projects.com>  Tue, 27 Apr 2010 16:59:45 +0200
+
 python-xcaplib (1.0.12) unstable; urgency=low
 
   [ Adrian Georgescu ]
