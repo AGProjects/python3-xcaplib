@@ -56,13 +56,19 @@ CONFIG_FILE = os.path.expanduser('~/.xcapclient.ini')
 
 # to guess app from /NODE-SELECTOR
 app_by_root_tag = {
-    #root tag        :  app,
-    'resource-lists' : 'resource-lists',
-    'rls-services'   : 'rls-services',
-    'ruleset'        : 'pres-rules',
-    'presence'       : 'pidf-manipulation',
-    'watchers'       : 'watchers',
-    'xcap-caps'      : 'xcap-caps'}
+    #root tag               :  app,
+    'resource-lists'        : 'resource-lists',
+    'rls-services'          : 'rls-services',
+    'ruleset'               : 'pres-rules',
+    'pres-rules'            : 'pres-rules',
+    'dialog'                : 'org.openxcap.dialog-rules',
+    'dialog-rules'          : 'org.openxcap.dialog-rules',
+    'presence'              : 'pidf-manipulation',
+    'pidf-manipulation'     : 'pidf-manipulation',
+    'watchers'              : 'org.openxcap.watchers',
+    'icon'                  : 'oma_status-icon',
+    'xcap-directory'        : 'org.openmobilealliance.xcap-directory',
+    'xcap-caps'             : 'xcap-caps'}
 
 root_tags = ['/' + root_tag for root_tag in app_by_root_tag.keys()]
 del root_tag
