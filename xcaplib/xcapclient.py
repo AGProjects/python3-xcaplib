@@ -116,7 +116,7 @@ def read_default_options(account_section='Account'):
     if client_config.get_section(account_section) is None:
         return None
     else:
-        return dict((k, getattr(Account, k)) for k in Account.__dict__ if k[:1]!='_' and getattr(Account, k))
+        return dict(Account)
 
 # parameters of the client; may be used by other clients (e.g. openxcap test system)
 def setup_parser_client(parser):
@@ -374,7 +374,7 @@ def set_globaltree(options):
 
 def update_options_from_config(options):
     if not options.account_name:
-        default_options = None
+        default_options = read_default_options()
     else:
         default_options = read_default_options(get_account_section(options.account_name))
 
