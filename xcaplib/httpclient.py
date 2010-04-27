@@ -5,9 +5,8 @@
 
 import httplib
 import socket
+import time
 import urllib2
-
-from threading import Timer
 
 __all__ = ['HTTPClient',
            'HTTPResponse']
@@ -17,7 +16,14 @@ class DNSCache(object):
         self.data = {}
         self.timer = None
     def is_cached(self, item):
-        return self.data.has_key(item)
+        now = time.time()
+        if self.data.has_key(item):
+            value, timestamp = self.get(item)
+            if now - timestamp < 5.0:
+                return True
+            # it's over 5 seconds old, delete it
+            self.delete(item)
+        return False
     def get(self, item):
         return self.data.get(item)
     def delete(self, item):
@@ -26,17 +32,7 @@ class DNSCache(object):
         except KeyError:
             pass
     def put (self, item, value):
-        if self.timer and self.timer.isAlive():
-            self.flush()
-        self.data[item] = value
-        self.timer = Timer(5.0, self.delete, [item])
-        self.timer.start()
-    def flush(self):
-        self.timer = None
-        self.data = {}
-    def __del__(self):
-        if self.timer is not None:
-            self.timer.cancel()
+        self.data[item] = (value, time.time())
 
 class CachingResolver(object):
     """
@@ -49,7 +45,7 @@ class CachingResolver(object):
 
     def query(self, host, port):
         if self.cache.is_cached((host, port)):
-            return self.cache.get((host, port))
+            return self.cache.get((host, port))[0]
         results = []
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
