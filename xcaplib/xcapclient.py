@@ -16,7 +16,7 @@ import sys
 OPT_COMPLETE = '--print-completions'
 
 try:
-    package_requirements = {'python-application': '1.1.4'}
+    package_requirements = {'python-application': '1.1.5'}
     try:
         from application.dependency import ApplicationDependencies
     except:
