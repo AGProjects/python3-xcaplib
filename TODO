@@ -2,6 +2,3 @@
 - Add sip: before user@domain to the XUI in each request
 - Make it work in async mode, urllib is blocking
 - even after asked for password, xcapclient still sends request without authorization first
-- fix parsing of command line arguments which are currently overwritten with
-  data from the configuration file; use a proxy attribute which first verifies
-  the command line and then fallbacks to the configuration file
