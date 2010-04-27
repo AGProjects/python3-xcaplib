@@ -150,7 +150,7 @@ def setup_parser_request(parser):
          "guessed from NODE-SELECTOR or from the input file. " + \
          "Known apps: %s" % ', '.join(apps)
     parser.add_option("--app", metavar='AUID', help=help)
-    parser.add_option("--filename", dest='filename')
+    parser.add_option("--filename", dest='filename', help="filename for XCAP resource URI, default is index")
     help='document context, users or global; default is users for everything except xcap-caps'
     parser.add_option('-c', '--context', help=help, dest='context', default=None)
     parser.add_option('--etag', help="perform a conditional operation", metavar='ETAG')
