@@ -34,6 +34,9 @@ class DNSCache(object):
     def flush(self):
         self.timer = None
         self.data = {}
+    def __del__(self):
+        if self.timer is not None:
+            self.timer.cancel()
 
 class CachingResolver(object):
     """
