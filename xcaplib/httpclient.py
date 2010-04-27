@@ -2,10 +2,98 @@
 #
 
 """Make HTTP requests. Thin wrapper around urllib2"""
+
+import httplib
+import socket
 import urllib2
+
+from threading import Timer
 
 __all__ = ['HTTPClient',
            'HTTPResponse']
+
+class DNSCache(object):
+    def __init__(self):
+        self.data = {}
+        self.timer = None
+    def is_cached(self, item):
+        return self.data.has_key(item)
+    def get(self, item):
+        return self.data.get(item)
+    def delete(self, item):
+        try:
+            del self.data[item]
+        except KeyError:
+            pass
+    def put (self, item, value):
+        if self.timer and self.timer.isAlive():
+            self.flush()
+        self.data[item] = value
+        self.timer = Timer(5.0, self.delete, [item])
+        self.timer.start()
+    def flush(self):
+        self.timer = None
+        self.data = {}
+
+class CachingResolver(object):
+    """
+    Simple resolver using socket.getaddrinfo, which is what urllib2
+    internally uses. When DNS round-robin is used, the first request
+    could be sent to one place and the next one (after the 401) to
+    a different server. This 'caching resolver' addresses that.
+    """
+    cache = DNSCache()
+
+    def query(self, host, port):
+        if self.cache.is_cached((host, port)):
+            return self.cache.get((host, port))
+        results = []
+        for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            results.append(sa)
+        self.cache.put((host, port), results[0][0])
+        return results[0][0]
+
+class HTTPConnection(httplib.HTTPConnection):
+    def connect(self):
+        resolver = CachingResolver()
+        host = resolver.query(self.host, self.port)
+        try:
+            self.sock = socket.socket()
+            self.sock.connect((host, self.port))
+        except socket.error, msg:
+            if self.sock:
+                self.sock.close()
+            self.sock = None
+            raise socket.error, msg
+
+class HTTPSConnection(httplib.HTTPSConnection):
+    def __init__(self, host, port=None, key_file=None, cert_file=None, strict=None):
+        httplib.HTTPConnection.__init__(self, host, port, strict)
+        self.key_file = key_file
+        self.cert_file = cert_file
+    def connect(self):
+        resolver = CachingResolver()
+        host = resolver.query(self.host, self.port)
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect((host, self.port))
+            ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
+            self.sock = httplib.FakeSocket(self.sock, ssl)
+        except socket.error, msg:
+            if self.sock:
+                self.sock.close()
+            self.sock = None
+            raise socket.error, msg
+
+class HTTPHandler(urllib2.HTTPHandler):
+    def http_open(self,req):
+        return self.do_open(HTTPConnection, req)
+
+class HTTPSHandler(urllib2.HTTPSHandler):
+    def https_open(self,req):
+        return self.do_open(HTTPSConnection, req)
+
 
 class HTTPRequest(urllib2.Request):
     """Hack urllib2.Request to support PUT and DELETE methods."""
@@ -39,7 +127,6 @@ class HTTPClient(object):
 
         def add_handler(klass):
             handler = klass()
-            #print handler, domain, self.base_url, username, password
             handler.add_password(domain, self.base_url, username, password)
             handlers.append(handler)
 
@@ -50,6 +137,8 @@ class HTTPClient(object):
         elif username is not None and password is not None:
             add_handler(urllib2.HTTPDigestAuthHandler)
             add_handler(urllib2.HTTPBasicAuthHandler)
+        handlers.append(HTTPHandler)
+        handlers.append(HTTPSHandler)
         self.opener = self.build_opener(*handlers)
 
     def request(self, method, path, headers=None, data=None, etag=None):
