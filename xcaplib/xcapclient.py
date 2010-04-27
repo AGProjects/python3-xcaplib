@@ -160,8 +160,8 @@ def setup_parser_request(parser):
                       help="source file for the PUT request; default is <stdin>")
     parser.add_option("-o", dest='output_filename',
                       help="output file for the body of the server response (successful or not); default is <stdout>")
-    parser.add_option("-d", "--dump", dest='dump', action='store_true', default=False,
-                      help="print HTTP traffic to stderr")
+    #parser.add_option("-d", "--dump", dest='dump', action='store_true', default=False,
+    #                  help="print HTTP traffic to stderr")
 
 def setup_parser(parser):
     setup_parser_client(parser)
@@ -505,8 +505,9 @@ def client_request(client, action, options, node_selector):
         else:
             raise ValueError('Unknown action: %r' % action)
     finally:
-        if options.dump:
-            logsocket.flush()
+        pass
+        #if options.dump:
+        #    logsocket.flush()
 
 def interactive():
     return hasattr(sys.stdin, 'isatty') and sys.stdin.isatty()
@@ -532,8 +533,8 @@ def main():
         return run_completion('--debug-completions', raise_ex=True)
 
     options, action, node_selector = parse_args()
-    if options.dump:
-        logsocket._install()
+    #if options.dump:
+    #    logsocket._install()
     client = make_xcapclient(options, XCAPClient=client_class)
     url = client.get_url(options.app, node_selector, globaltree=options.globaltree, filename=options.filename)
     sys.stderr.write('%s %s\n' % (action, url))
