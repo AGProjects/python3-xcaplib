@@ -388,7 +388,9 @@ def update_options_from_config(options):
         sys.exit('Section [%s] was not found in %s' % (get_account_section(options.account_name), CONFIG_FILE))
 
     if default_options is not None:
-        options._update_careful(default_options)
+        for key, value in default_options.iteritems():
+            if not getattr(options, key, None):
+                setattr(options, key, value)
 
 def parse_args():
     argv = sys.argv[1:]
