@@ -7,6 +7,7 @@ import httplib
 import socket
 import time
 import urllib2
+import sys
 
 __all__ = ['HTTPClient',
            'HTTPResponse']
@@ -67,8 +68,12 @@ class HTTPConnection(httplib.HTTPConnection):
             raise socket.error, msg
 
 class HTTPSConnection(httplib.HTTPSConnection):
-    def __init__(self, host, port=None, key_file=None, cert_file=None, strict=None):
-        httplib.HTTPConnection.__init__(self, host, port, strict)
+    def __init__(self, host, port=None, key_file=None, cert_file=None, strict=None, timeout=None):
+        # 'timeout' argument was introduced in python 2.6
+        if sys.version_info < (2, 6):
+            httplib.HTTPConnection.__init__(self, host, port, strict)
+        else:
+            httplib.HTTPConnection.__init__(self, host, port, strict, timeout)
         self.key_file = key_file
         self.cert_file = cert_file
     def connect(self):
@@ -77,8 +82,12 @@ class HTTPSConnection(httplib.HTTPSConnection):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((host, self.port))
-            ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
-            self.sock = httplib.FakeSocket(self.sock, ssl)
+            if sys.version_info < (2, 6):
+                ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
+                self.sock = httplib.FakeSocket(self.sock, ssl)
+            else:
+                import ssl
+                self.sock = ssl.wrap_socket(self.sock, self.key_file, self.cert_file)
         except socket.error, msg:
             if self.sock:
                 self.sock.close()
