@@ -220,4 +220,5 @@ def convert_urllib_addinfourl(x):
     len = x.headers.get('content-length')
     if len is not None:
         len = int(len)
-    return HTTPResponse(x.url, 200, 'OK', x.headers, x.fp.read(len))
+    return HTTPResponse(x.url, x.code, x.msg, x.headers, x.fp.read(len))
+
