@@ -149,7 +149,7 @@ class HTTPClient(object):
         handlers.append(HTTPSHandler)
         self.opener = self.build_opener(*handlers)
 
-    def request(self, method, path, headers=None, data=None, etag=None):
+    def request(self, method, path, headers=None, data=None, etag=None, etagnot=None):
         """Make HTTP request. Return HTTPResponse instance.
 
         Will never raise urllib2.HTTPError, but may raise other exceptions, such
@@ -160,7 +160,9 @@ class HTTPClient(object):
         if headers is None:
             headers = {}
         if etag is not None:
-            headers['If-Match'] = '"' + etag + '"' # XXX use quoteString instead?
+            headers['If-Match'] = '"%s"' % etag if etag!='*' else '*' # XXX use quoteString instead?
+        if etagnot is not None:
+            headers['If-None-Match'] = ('"%s"' % etagnot) if etagnot!='*' else '*'
         url = self.base_url+path
         req = HTTPRequest(url, method=method, headers=headers, data=data)
         try:

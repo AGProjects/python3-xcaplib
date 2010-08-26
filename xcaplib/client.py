@@ -111,24 +111,24 @@ class XCAPClientBase(object):
     def get_url(self, application, node, **kwargs):
         return (self.root or '') + get_path('sip:'+self.sip_address, application, node, **kwargs)
 
-    def _get(self, application, node=None, etag=None, headers=None, **kwargs):
+    def _get(self, application, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
         path = get_path('sip:'+self.sip_address, application, node, **kwargs)
-        return self.con.request('GET', path, headers=headers, etag=etag)
+        return self.con.request('GET', path, headers=headers, etag=etag, etagnot=etagnot)
 
-    def _put(self, application, resource, node=None, etag=None, headers=None, **kwargs):
+    def _put(self, application, resource, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
         path = get_path('sip:'+self.sip_address, application, node, **kwargs)
         if 'Content-Type' not in headers:
             content_type = Resource.get_content_type_for_node(node)
             if content_type:
                 headers['Content-Type'] = content_type
-        return self.con.request('PUT', path, headers, resource, etag=etag)
+        return self.con.request('PUT', path, headers, resource, etag=etag, etagnot=etagnot)
 
-    def _delete(self, application, node=None, etag=None, headers=None, **kwargs):
+    def _delete(self, application, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
         path = get_path('sip:'+self.sip_address, application, node, **kwargs)
-        return self.con.request('DELETE', path, etag=etag, headers=headers)
+        return self.con.request('DELETE', path, etag=etag, etagnot=etagnot, headers=headers)
 
 def make_resource_from_httpresponse(response):
     if 200 <= response.status <= 299:
