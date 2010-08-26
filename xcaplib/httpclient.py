@@ -174,6 +174,12 @@ class HTTPClient(object):
             else:
                 raise RuntimeError('urllib2.open returned %r' % response)
         except urllib2.HTTPError, e:
+            # Workaround for bug in urllib2 which doesn't reset the retry count
+            # when a negative, but different that 401 or 407, response is
+            # received. -Luci
+            if e.code not in (401, 407):
+                for handler in (handler for handler in self.opener.handlers if isinstance(handler, (urllib2.HTTPDigestAuthHandler, urllib2.ProxyDigestAuthHandler))):
+                    handler.reset_retry_count()
             return convert_urllib2_HTTPError(e)
 
 
