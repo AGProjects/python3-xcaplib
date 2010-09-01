@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2009 AG Projects. See LICENSE for details.
+# Copyright (C) 2008-2010 AG Projects. See LICENSE for details.
 #
 
 from eventlet.green.urllib2 import build_opener
