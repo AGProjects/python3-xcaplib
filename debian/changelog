@@ -1,3 +1,12 @@
+python-xcaplib (1.0.15) unstable; urgency=low
+
+  * Don't overwrite incoming response code and message
+  * Added support for If-None-Match header
+  * Added workaround for bug in urllib2
+  * Bumped Standards-Version to 3.9.1
+
+ -- Saul Ibarra <saul@ag-projects.com>  Wed, 01 Sep 2010 09:33:04 +0200
+
 python-xcaplib (1.0.14) unstable; urgency=low
 
   * Use timestams instead of a Timer to check if cached queries are old
