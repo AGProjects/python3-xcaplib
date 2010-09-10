@@ -1,5 +1,6 @@
 recursive-include debian  changelog compat control copyright pycompat rules
 recursive-include debian  pyversions *.dirs
+recursive-include debian/source format
 recursive-include examples *.xml
 recursive-include bash_completion.d xcapclient
 recursive-include test *.py
