@@ -1,13 +1,16 @@
 #!/usr/bin/make -f
 
-DEB_PYTHON_SYSTEM=pysupport
-DEB_DH_INSTALLINIT_ARGS=--no-start
+#export DH_VERBOSE=1
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/python-distutils.mk
+%:
+	dh  $@ --with python2
 
-clean::
-	-rm -rf build dist MANIFEST
+override_dh_clean:
+	dh_clean
+	rm -rf build dist MANIFEST
 
-install/python-xcaplib::
+override_dh_install:
+	dh_install
 	install -m 0644 bash_completion.d/xcapclient debian/python-xcaplib/etc/bash_completion.d/xcapclient
+
+.PHONY: override_dh_clean override_dh_install
