@@ -32,6 +32,7 @@ try:
     import os
     import urllib2
     from httplib import HTTPException
+    from lxml import etree
     import optparse
     import traceback
     from StringIO import StringIO
@@ -475,6 +476,8 @@ def write_content_type(type):
     sys.stderr.write('content-type: %s\n' % type)
 
 def write_body(options, data):
+    parsed_data = etree.parse(StringIO(data))
+    data = etree.tostring(parsed_data, pretty_print=True)
     options.output_file.write(data)
     options.output_file.flush()
     if options.output_filename: # i.e. not stdout
