@@ -1,105 +1,72 @@
-# Copyright (C) 2008-2010 AG Projects. See LICENSE for details.
+# Copyright (C) 2008-2012 AG Projects. See LICENSE for details.
 #
 
 """Make HTTP requests. Thin wrapper around urllib2"""
 
+
+__all__ = ['HTTPClient', 'HTTPResponse']
+
+
 import httplib
 import socket
-import time
+import urllib
 import urllib2
-import sys
 
-__all__ = ['HTTPClient',
-           'HTTPResponse']
 
-class DNSCache(object):
+class Address(str):
+    def __init__(self, value):
+        self.refcount = 0
+
+class HostCache(object):
     def __init__(self):
-        self.data = {}
-        self.timer = None
-    def is_cached(self, item):
-        now = time.time()
-        if self.data.has_key(item):
-            value, timestamp = self.get(item)
-            if now - timestamp < 5.0:
-                return True
-            # it's over 5 seconds old, delete it
-            self.delete(item)
-        return False
-    def get(self, item):
-        return self.data.get(item)
-    def delete(self, item):
+        self.hostmap = {}
+
+    def get(self, host):
+        return str(self.hostmap[host])
+
+    def lookup(self, host):
         try:
-            del self.data[item]
+            address = self.hostmap[host]
         except KeyError:
-            pass
-    def put (self, item, value):
-        self.data[item] = (value, time.time())
+            try:
+                address = self.hostmap.setdefault(host, Address(next(sa[0] for family, socktype, proto, cname, sa in socket.getaddrinfo(host, 0, 0, 0, socket.SOL_TCP))))
+            except socket.gaierror:
+                address = self.hostmap.setdefault(host, Address(host))
+        address.refcount += 1
+        return str(address)
 
-class CachingResolver(object):
-    """
-    Simple resolver using socket.getaddrinfo, which is what urllib2
-    internally uses. When DNS round-robin is used, the first request
-    could be sent to one place and the next one (after the 401) to
-    a different server. This 'caching resolver' addresses that.
-    """
-    cache = DNSCache()
+    def release(self, host):
+        address = self.hostmap[host]
+        address.refcount -= 1
+        if address.refcount == 0:
+            del self.hostmap[host]
 
-    def query(self, host, port):
-        if self.cache.is_cached((host, port)):
-            return self.cache.get((host, port))[0]
-        results = []
-        for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
-            af, socktype, proto, canonname, sa = res
-            results.append(sa)
-        self.cache.put((host, port), results[0][0])
-        return results[0][0]
+HostCache = HostCache()
+
 
 class HTTPConnection(httplib.HTTPConnection):
     def connect(self):
-        resolver = CachingResolver()
-        host = resolver.query(self.host, self.port)
-        try:
-            self.sock = socket.socket()
-            self.sock.connect((host, self.port))
-        except socket.error, msg:
-            if self.sock:
-                self.sock.close()
-            self.sock = None
-            raise socket.error, msg
+        address = HostCache.get(self.host)
+        self.sock = socket.create_connection((address, self.port), self.timeout, self.source_address)
+        if self._tunnel_host:
+            self._tunnel()
 
 class HTTPSConnection(httplib.HTTPSConnection):
-    def __init__(self, host, port=None, key_file=None, cert_file=None, strict=None, timeout=None):
-        # 'timeout' argument was introduced in python 2.6
-        if sys.version_info < (2, 6):
-            httplib.HTTPConnection.__init__(self, host, port, strict)
-        else:
-            httplib.HTTPConnection.__init__(self, host, port, strict, timeout)
-        self.key_file = key_file
-        self.cert_file = cert_file
     def connect(self):
-        resolver = CachingResolver()
-        host = resolver.query(self.host, self.port)
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((host, self.port))
-            if sys.version_info < (2, 6):
-                ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
-                self.sock = httplib.FakeSocket(self.sock, ssl)
-            else:
-                import ssl
-                self.sock = ssl.wrap_socket(self.sock, self.key_file, self.cert_file)
-        except socket.error, msg:
-            if self.sock:
-                self.sock.close()
-            self.sock = None
-            raise socket.error, msg
+        import ssl
+        address = HostCache.get(self.host)
+        sock = socket.create_connection((address, self.port), self.timeout, self.source_address)
+        if self._tunnel_host:
+            self.sock = sock
+            self._tunnel()
+        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
 
 class HTTPHandler(urllib2.HTTPHandler):
-    def http_open(self,req):
+    def http_open(self, req):
         return self.do_open(HTTPConnection, req)
 
 class HTTPSHandler(urllib2.HTTPSHandler):
-    def https_open(self,req):
+    def https_open(self, req):
         return self.do_open(HTTPSConnection, req)
 
 
@@ -165,6 +132,8 @@ class HTTPClient(object):
             headers['If-None-Match'] = ('"%s"' % etagnot) if etagnot!='*' else '*'
         url = self.base_url+path
         req = HTTPRequest(url, method=method, headers=headers, data=data)
+        host, port = urllib.splitport(req.get_host())
+        HostCache.lookup(host)
         try:
             response = self.opener.open(req)
             if isinstance(response, urllib2.HTTPError):
@@ -181,6 +150,8 @@ class HTTPClient(object):
                 for handler in (handler for handler in self.opener.handlers if isinstance(handler, (urllib2.HTTPDigestAuthHandler, urllib2.ProxyDigestAuthHandler))):
                     handler.reset_retry_count()
             return convert_urllib2_HTTPError(e)
+        finally:
+            HostCache.release(host)
 
 
 def parse_etag_header(s):
