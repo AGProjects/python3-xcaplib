@@ -87,6 +87,49 @@ class HTTPRequest(urllib2.Request):
         return s
 
 
+class HTTPResponse(object):
+    def __init__(self, url, status, reason, headers, body):
+        self.url = url
+        self.status = status
+        self.reason = reason
+        self.headers = headers if headers is not None else {}
+        self.body = body
+
+    def __str__(self):
+        result = "%s %s <%s>" % (self.status, self.reason, self.url)
+        for k, v in self.headers.items():
+            result += '\n%s: %s' % (k, v)
+        if self.body:
+            result += '\n\n'
+            result += self.body
+            result += '\n'
+        return result
+
+    @property
+    def etag(self):
+        etag = self.headers.get('ETag')
+        if etag is None:
+            return None
+        if len(etag) > 1 and etag[0] == etag[-1] == '"':
+            return etag[1:-1]
+        else:
+            raise ValueError('Cannot parse etag header value: %r' % etag)
+
+    @classmethod
+    def from_HTTPError(cls, response):
+        if response.fp is not None:
+            length = int(response.hdrs.get('content-length') or -1)
+            body = response.fp.read(length)
+        else:
+            body = ''
+        return cls(response.filename, response.code, response.msg, response.hdrs, body)
+
+    @classmethod
+    def from_addinfourl(cls, response):
+        length = int(response.headers.get('content-length') or -1)
+        return cls(response.url, response.code, response.msg, response.headers, response.fp.read(length))
+
+
 class HTTPClient(object):
     def __init__(self, base_url, username, domain, password=None, auth=None):
         self.base_url = base_url
@@ -122,9 +165,9 @@ class HTTPClient(object):
         try:
             response = self.opener.open(req)
             if isinstance(response, urllib2.HTTPError):
-                return convert_urllib2_HTTPError(response)
+                return HTTPResponse.from_HTTPError(response)
             elif isinstance(response, urllib2.addinfourl):
-                return convert_urllib_addinfourl(response)
+                return HTTPResponse.from_addinfourl(response)
             else:
                 raise RuntimeError('urllib2.open returned %r' % response)
         except urllib2.HTTPError, e:
@@ -134,55 +177,8 @@ class HTTPClient(object):
             if e.code not in (401, 407):
                 for handler in (handler for handler in self.opener.handlers if isinstance(handler, (urllib2.HTTPDigestAuthHandler, urllib2.ProxyDigestAuthHandler))):
                     handler.reset_retry_count()
-            return convert_urllib2_HTTPError(e)
+            return HTTPResponse.from_HTTPError(e)
         finally:
             HostCache.release(host)
 
-
-def parse_etag_header(s):
-    if s is None:
-        return s
-    if len(s)>1 and s[0]=='"' and s[-1]=='"':
-        return s[1:-1]
-    else:
-        raise ValueError('Cannot parse etag header value: %r' % s)
-
-
-class HTTPResponse(object):
-
-    def __init__(self, url, status, reason, headers, body):
-        self.url = url
-        self.status = status
-        self.reason = reason
-        self.headers = headers
-        if self.headers is None:
-            self.headers = {}
-        self.body = body
-
-    @property
-    def etag(self):
-        return parse_etag_header(self.headers.get('ETag'))
-
-    def __str__(self):
-        result = "%s %s <%s>" % (self.status, self.reason, self.url)
-        for k, v in self.headers.items():
-            result += '\n%s: %s' % (k, v)
-        if self.body:
-            result += '\n\n'
-            result += self.body
-            result += '\n'
-        return result
-
-def convert_urllib2_HTTPError(x):
-    len = x.hdrs.get('content-length')
-    if len is not None:
-        len = int(len)
-    body = x.fp.read(len) if x.fp is not None else ''
-    return HTTPResponse(x.filename, x.code, x.msg, x.hdrs, body)
-
-def convert_urllib_addinfourl(x):
-    len = x.headers.get('content-length')
-    if len is not None:
-        len = int(len)
-    return HTTPResponse(x.url, x.code, x.msg, x.headers, x.fp.read(len))
 
