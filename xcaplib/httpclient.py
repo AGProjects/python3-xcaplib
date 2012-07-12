@@ -73,9 +73,8 @@ class HTTPSHandler(urllib2.HTTPSHandler):
 class HTTPRequest(urllib2.Request):
     """Hack urllib2.Request to support PUT and DELETE methods."""
 
-    def __init__(self, url, method="GET", data=None, headers={},
-                 origin_req_host=None, unverifiable=False):
-        urllib2.Request.__init__(self,url,data,headers,origin_req_host,unverifiable)
+    def __init__(self, url, method="GET", data=None, headers={}, origin_req_host=None, unverifiable=False):
+        urllib2.Request.__init__(self, url, data, headers, origin_req_host, unverifiable)
         self.url = url
         self.method = method
 
