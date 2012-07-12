@@ -136,7 +136,8 @@ class HTTPClient(object):
         if self.base_url[-1:] != '/':
             self.base_url += '/'
         password_manager = urllib2.HTTPPasswordMgr()
-        password_manager.add_password(domain, self.base_url, username, password)
+        if username is not None is not password:
+            password_manager.add_password(domain, self.base_url, username, password)
         self.opener = urllib2.build_opener(HTTPHandler, HTTPSHandler, urllib2.HTTPDigestAuthHandler(password_manager), urllib2.HTTPBasicAuthHandler(password_manager))
 
     def request(self, method, path, headers=None, data=None, etag=None, etagnot=None):
