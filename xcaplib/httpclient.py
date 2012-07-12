@@ -88,32 +88,18 @@ class HTTPRequest(urllib2.Request):
 
 
 class HTTPClient(object):
-
-    def build_opener(self, *args):
-        return urllib2.build_opener(*args)
-
     def __init__(self, base_url, username, domain, password=None, auth=None):
         self.base_url = base_url
-        if self.base_url[-1:]!='/':
+        if self.base_url[-1:] != '/':
             self.base_url += '/'
-
-        handlers = []
-
-        def add_handler(klass):
-            handler = klass()
-            handler.add_password(domain, self.base_url, username, password)
-            handlers.append(handler)
-
-        if auth == 'basic':
-            add_handler(urllib2.HTTPBasicAuthHandler)
-        elif auth == "digest":
-            add_handler(urllib2.HTTPDigestAuthHandler)
-        elif username is not None and password is not None:
-            add_handler(urllib2.HTTPDigestAuthHandler)
-            add_handler(urllib2.HTTPBasicAuthHandler)
-        handlers.append(HTTPHandler)
-        handlers.append(HTTPSHandler)
-        self.opener = self.build_opener(*handlers)
+        password_manager = urllib2.HTTPPasswordMgr()
+        password_manager.add_password(domain, self.base_url, username, password)
+        handlers = [HTTPHandler, HTTPSHandler]
+        if auth in ('digest', None):
+            handlers.append(urllib2.HTTPDigestAuthHandler(password_manager))
+        if auth in ('basic', None):
+            handlers.append(urllib2.HTTPBasicAuthHandler(password_manager))
+        self.opener = urllib2.build_opener(*handlers)
 
     def request(self, method, path, headers=None, data=None, etag=None, etagnot=None):
         """Make HTTP request. Return HTTPResponse instance.
