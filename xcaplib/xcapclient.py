@@ -96,19 +96,9 @@ class OptionParser_NoExit(optparse.OptionParser):
         raise ValueError(msg)
 
 
-class Auth:
-
-    def __new__(cls, auth):
-        if auth.lower() == 'none':
-            return None
-        else:
-            return auth.lower()
-
-
 class Account(ConfigSection):
     sip_address = ''
     password = ConfigSetting(type=str, value=None)
-    auth = ConfigSetting(type=Auth, value=None)
     xcap_root = ''
 
 def get_account_section(account_name=None):
@@ -142,8 +132,6 @@ def setup_parser_client(parser):
 
     help = 'password to use if authentication is required. If not supplied will be asked interactively'
     parser.add_option('-p', '--password', default=Account.password, help=help)
-
-    parser.add_option("--auth", help=optparse.SUPPRESS_HELP)
 
 # parameters of the request to perform, specific to this script
 def setup_parser_request(parser):
@@ -276,8 +264,6 @@ def completion(result, argv, comp_cword):
 
     if argv[-1]=='--app':
         return add(*apps)
-    elif argv[-1]=='--auth':
-        return add('basic', 'digest', 'none')
     elif argv[-1]!='-d' and argv[-1][0]=='-':
         return
 
@@ -463,7 +449,7 @@ def parse_args():
     return options, action, node_selector
 
 def make_xcapclient(options, XCAPClient=XCAPClient):
-    return XCAPClient(options.xcap_root, options.sip_address, options.password, options.auth)
+    return XCAPClient(options.xcap_root, options.sip_address, options.password)
 
 def write_etag(etag):
     if etag:
@@ -551,7 +537,7 @@ def main():
         if authreq:
             mo = urllib2.AbstractBasicAuthHandler.rx.search(authreq)
             if mo:
-                options.auth, realm = mo.groups()
+                realm = mo.groups()[-1]
                 #sys.stderr.write('Server requested authentication, but no password was provided.\n')
                 options.password = getPassword('Password (realm=%s): ' % realm)
                 client = make_xcapclient(options, XCAPClient=client_class)

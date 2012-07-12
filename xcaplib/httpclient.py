@@ -131,18 +131,13 @@ class HTTPResponse(object):
 
 
 class HTTPClient(object):
-    def __init__(self, base_url, username, domain, password=None, auth=None):
+    def __init__(self, base_url, username, domain, password=None):
         self.base_url = base_url
         if self.base_url[-1:] != '/':
             self.base_url += '/'
         password_manager = urllib2.HTTPPasswordMgr()
         password_manager.add_password(domain, self.base_url, username, password)
-        handlers = [HTTPHandler, HTTPSHandler]
-        if auth in ('digest', None):
-            handlers.append(urllib2.HTTPDigestAuthHandler(password_manager))
-        if auth in ('basic', None):
-            handlers.append(urllib2.HTTPBasicAuthHandler(password_manager))
-        self.opener = urllib2.build_opener(*handlers)
+        self.opener = urllib2.build_opener(HTTPHandler, HTTPSHandler, urllib2.HTTPDigestAuthHandler(password_manager), urllib2.HTTPBasicAuthHandler(password_manager))
 
     def request(self, method, path, headers=None, data=None, etag=None, etagnot=None):
         """Make HTTP request. Return HTTPResponse instance.
