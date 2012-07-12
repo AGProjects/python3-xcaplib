@@ -203,7 +203,7 @@ class XCAPClient(XCAPClientBase):
             retries -= 1
             document = self.get(application, None, etag, **kwargs)
             try:
-                element = self.get(application, node, document.etag, **kwargs)
+                self.get(application, node, document.etag, **kwargs)
             except HTTPError, ex:
                 if etag is None and ex.status == 412:
                     continue
