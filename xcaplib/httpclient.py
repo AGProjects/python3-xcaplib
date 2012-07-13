@@ -47,16 +47,16 @@ HostCache = HostCache()
 class HTTPConnection(httplib.HTTPConnection):
     def connect(self):
         address = HostCache.get(self.host)
-        self.sock = socket.create_connection((address, self.port), self.timeout, self.source_address)
-        if self._tunnel_host:
+        self.sock = socket.create_connection((address, self.port), self.timeout) # self.source_address is only present in 2.7 and is not set by urllib2
+        if hasattr(self, '_tunnel') and self._tunnel_host:
             self._tunnel()
 
 class HTTPSConnection(httplib.HTTPSConnection):
     def connect(self):
         import ssl
         address = HostCache.get(self.host)
-        sock = socket.create_connection((address, self.port), self.timeout, self.source_address)
-        if self._tunnel_host:
+        sock = socket.create_connection((address, self.port), self.timeout) # self.source_address is only present in 2.7 and is not set by urllib2
+        if hasattr(self, '_tunnel') and self._tunnel_host:
             self.sock = sock
             self._tunnel()
         self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
