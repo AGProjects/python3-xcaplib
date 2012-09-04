@@ -1,7 +1,7 @@
 # Copyright (C) 2008-2012 AG Projects. See LICENSE for details.
 #
 
-from eventlet.green import socket, httplib, urllib2
+from eventlib.green import socket, httplib, urllib2
 from xcaplib import httpclient
 from xcaplib import client
 

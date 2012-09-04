@@ -510,7 +510,7 @@ def get_exit_code(http_error):
         return 3
 
 def main():
-    if sys.argv[0].endswith('-eventlet'):
+    if sys.argv[0].endswith('-eventlib'):
         from xcaplib.green import XCAPClient as client_class
     else:
         client_class = XCAPClient
