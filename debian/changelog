@@ -1,4 +1,4 @@
-python-xcaplib (1.0.17) unstable; urgency=low
+python-xcaplib (1.0.17) UNRELEASED; urgency=low
 
   * Beautify output XML data
   * Implemented a host cache with lifetime tied to the request's lifetime
@@ -6,9 +6,11 @@ python-xcaplib (1.0.17) unstable; urgency=low
   * Redefined some functions as methods and reorganized code a bit
   * Removed auth argument from XCAPClient and automatically support both
   * Only add username/password to the password manager if they are defined
+  * Adapted to eventlet package rename
   * Bumped debian standards version to 3.9.3
+  * Raised debian/compat version to 7
 
- -- Dan Pascu <dan@ag-projects.com>  Thu, 12 Jul 2012 22:18:22 +0300
+ -- Saul Ibarra <saul@ag-projects.com>  Wed, 05 Sep 2012 11:05:21 +0200
 
 python-xcaplib (1.0.16) unstable; urgency=low
 
