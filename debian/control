@@ -9,6 +9,7 @@ Standards-Version: 3.9.3
 Package: python-xcaplib
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, python-application (>= 1.1.5), python-lxml
+Recommends: python-eventlib
 Description: Python library for managing XML documents on XCAP server
  XCAP protocol allows a client to read, write, and modify application
  configuration data stored in XML format on a server. XCAP maps XML document
