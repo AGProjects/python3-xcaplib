@@ -1,4 +1,4 @@
-python-xcaplib (1.0.17) UNRELEASED; urgency=low
+python-xcaplib (1.0.17) unstable; urgency=low
 
   * Beautify output XML data
   * Implemented a host cache with lifetime tied to the request's lifetime
@@ -10,7 +10,7 @@ python-xcaplib (1.0.17) UNRELEASED; urgency=low
   * Bumped debian standards version to 3.9.3
   * Raised debian/compat version to 7
 
- -- Saul Ibarra <saul@ag-projects.com>  Wed, 05 Sep 2012 11:05:21 +0200
+ -- Saul Ibarra <saul@ag-projects.com>  Fri, 07 Sep 2012 10:26:53 +0200
 
 python-xcaplib (1.0.16) unstable; urgency=low
 
