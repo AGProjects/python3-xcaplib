@@ -91,7 +91,7 @@ class XCAPClientBase(object):
 
     HTTPClient = HTTPClient
 
-    def __init__(self, root, sip_address, password=None):
+    def __init__(self, root, sip_address, password=None, timeout=None):
         self.root = root
         if self.root[-1:] == '/':
             self.root = self.root[:-1]
@@ -100,6 +100,7 @@ class XCAPClientBase(object):
         self.sip_address = sip_address
         username, domain = sip_address.split('@', 1)
         self.client = self.HTTPClient(self.root, username, domain, password)
+        self.timeout = timeout
 
     def _update_headers(self, headers):
         if headers is None:
@@ -114,7 +115,7 @@ class XCAPClientBase(object):
     def _get(self, application, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
         path = get_path('sip:'+self.sip_address, application, node, **kwargs)
-        return self.client.request('GET', path, headers=headers, etag=etag, etagnot=etagnot)
+        return self.client.request('GET', path, headers=headers, etag=etag, etagnot=etagnot, timeout=self.timeout)
 
     def _put(self, application, resource, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
@@ -123,12 +124,12 @@ class XCAPClientBase(object):
             content_type = Resource.get_content_type_for_node(node)
             if content_type:
                 headers['Content-Type'] = content_type
-        return self.client.request('PUT', path, headers, resource, etag=etag, etagnot=etagnot)
+        return self.client.request('PUT', path, headers, resource, etag=etag, etagnot=etagnot, timeout=self.timeout)
 
     def _delete(self, application, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
         path = get_path('sip:'+self.sip_address, application, node, **kwargs)
-        return self.client.request('DELETE', path, etag=etag, etagnot=etagnot, headers=headers)
+        return self.client.request('DELETE', path, etag=etag, etagnot=etagnot, headers=headers, timeout=self.timeout)
 
 def make_resource_from_httpresponse(response):
     if 200 <= response.status <= 299:

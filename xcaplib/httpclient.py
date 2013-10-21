@@ -140,7 +140,7 @@ class HTTPClient(object):
             password_manager.add_password(domain, self.base_url, username, password)
         self.opener = urllib2.build_opener(HTTPHandler, HTTPSHandler, urllib2.HTTPDigestAuthHandler(password_manager), urllib2.HTTPBasicAuthHandler(password_manager))
 
-    def request(self, method, path, headers=None, data=None, etag=None, etagnot=None):
+    def request(self, method, path, headers=None, data=None, etag=None, etagnot=None, timeout=None):
         """Make HTTP request. Return HTTPResponse instance.
 
         Will never raise urllib2.HTTPError, but may raise other exceptions, such
@@ -159,7 +159,7 @@ class HTTPClient(object):
         host, port = urllib.splitport(req.get_host())
         HostCache.lookup(host)
         try:
-            response = self.opener.open(req)
+            response = self.opener.open(req, timeout=timeout)
             if isinstance(response, urllib2.HTTPError):
                 return HTTPResponse.from_HTTPError(response)
             elif isinstance(response, urllib2.addinfourl):
