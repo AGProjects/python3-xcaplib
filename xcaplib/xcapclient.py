@@ -149,6 +149,8 @@ def setup_parser_request(parser):
                       help="source file for the PUT request; default is <stdin>")
     parser.add_option("-o", dest='output_filename',
                       help="output file for the body of the server response (successful or not); default is <stdout>")
+    parser.add_option("--timeout", dest='timeout',
+                      help="timeout for the request")
     #parser.add_option("-d", "--dump", dest='dump', action='store_true', default=False,
     #                  help="print HTTP traffic to stderr")
 
@@ -449,7 +451,7 @@ def parse_args():
     return options, action, node_selector
 
 def make_xcapclient(options, XCAPClient=XCAPClient):
-    return XCAPClient(options.xcap_root, options.sip_address, options.password)
+    return XCAPClient(options.xcap_root, options.sip_address, options.password, timeout=float(options.timeout))
 
 def write_etag(etag):
     if etag:
