@@ -451,7 +451,7 @@ def parse_args():
     return options, action, node_selector
 
 def make_xcapclient(options, XCAPClient=XCAPClient):
-    return XCAPClient(options.xcap_root, options.sip_address, options.password, timeout=float(options.timeout))
+    return XCAPClient(options.xcap_root, options.sip_address, options.password, timeout=float(options.timeout) if options.timeout else None)
 
 def write_etag(etag):
     if etag:
