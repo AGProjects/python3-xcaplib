@@ -5,7 +5,7 @@ from xcaplib import __version__
 
 setup(name         = "python-xcaplib",
       version      = __version__,
-      author       = "Denis Bilenko",
+      author       = "AG Projects",
       author_email = "support@ag-projects.com",
       url          = "http://openxcap.org/",
       description  = "Client for managing full or partial XML documents on XCAP servers (RFC 4825)",
