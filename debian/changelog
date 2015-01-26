@@ -1,3 +1,12 @@
+python-xcaplib (1.1.0) unstable; urgency=medium
+
+  * Added timeout to XCAPClient.request
+  * Added timeout option to command line client
+  * Bumped Debian Standards-Revision
+  * Drop Python 2.6 support
+
+ -- Saul Ibarra <saul@ag-projects.com>  Mon, 26 Jan 2015 16:44:08 +0100
+
 python-xcaplib (1.0.17) unstable; urgency=low
 
   * Beautify output XML data
