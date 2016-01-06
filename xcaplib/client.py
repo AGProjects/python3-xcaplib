@@ -1,5 +1,3 @@
-# Copyright (C) 2008-2010 AG Projects. See LICENSE for details.
-#
 
 from xcaplib import __version__
 from xcaplib.httpclient import HTTPClient

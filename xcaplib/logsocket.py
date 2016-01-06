@@ -1,7 +1,6 @@
-# Copyright (C) 2008-2010 AG Projects. See LICENSE for details.
-#
 
 """Extends standard socket with "dump traffic" feature"""
+
 import sys
 from socket import _realsocket
 
