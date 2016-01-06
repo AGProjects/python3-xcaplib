@@ -1,3 +1,10 @@
+python-xcaplib (1.2.0) unstable; urgency=medium
+
+  * Removed runtime dependency check
+  * Updated copyright years
+
+ -- Saul Ibarra <saul@ag-projects.com>  Wed, 06 Jan 2016 14:50:01 +0100
+
 python-xcaplib (1.1.0) unstable; urgency=medium
 
   * Added timeout to XCAPClient.request
