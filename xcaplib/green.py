@@ -1,5 +1,5 @@
 
-from eventlib.green import socket, httplib, urllib2
+from eventlib.green import socket, ssl, httplib, urllib2
 from xcaplib import httpclient
 from xcaplib import client
 
@@ -13,8 +13,8 @@ class HTTPSConnection(httplib.HTTPSConnection):
     def connect(self):
         address = httpclient.HostCache.get(self.host)
         sock = socket.create_connection((address, self.port), self.timeout)
-        ssl = socket.ssl(sock, self.key_file, self.cert_file)
-        self.sock = httplib.FakeSocket(sock, ssl)
+        ssl_sock = ssl.sslwrap_simple(sock, self.key_file, self.cert_file)
+        self.sock = httplib.FakeSocket(sock, ssl_sock)
 
 class HTTPHandler(urllib2.HTTPHandler):
     def http_open(self, req):
