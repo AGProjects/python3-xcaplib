@@ -1,3 +1,16 @@
+python-xcaplib (1.2.1) unstable; urgency=medium
+
+  * Replaced deprecated function and fixed wrong order of arguments
+  * Install the bash completion file to the newly designated directory
+  * Increased debian compatibility to 9
+  * Increased debian standards version to 3.9.8
+  * Removed obsolete pycompat/pyversions files
+  * Removed unnecessary .PHONY target
+  * Updated debian maintainer
+  * Updated debian uploaders
+
+ -- Dan Pascu <dan@ag-projects.com>  Thu, 04 Oct 2018 23:25:55 +0300
+
 python-xcaplib (1.2.0) unstable; urgency=medium
 
   * Removed runtime dependency check
