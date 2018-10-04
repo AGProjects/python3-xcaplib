@@ -11,4 +11,5 @@ override_dh_clean:
 
 override_dh_install:
 	dh_install
-	install -m 0644 bash_completion.d/xcapclient debian/python-xcaplib/etc/bash_completion.d/xcapclient
+	install -d debian/python-xcaplib/usr/share/bash-completion/completions/
+	install -m 0644 bash_completion.d/xcapclient debian/python-xcaplib/usr/share/bash-completion/completions/xcapclient
