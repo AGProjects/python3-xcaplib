@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python2
 
 """
   %prog: Client for managing full or partial XML documents on XCAP servers (RFC 4825)
