@@ -1,7 +1,5 @@
 #!/usr/bin/make -f
 
-#export DH_VERBOSE=1
-
 %:
 	dh $@ --with python2
 
@@ -13,3 +11,4 @@ override_dh_install:
 	dh_install
 	install -d debian/python-xcaplib/usr/share/bash-completion/completions/
 	install -m 0644 bash_completion.d/xcapclient debian/python-xcaplib/usr/share/bash-completion/completions/xcapclient
+
