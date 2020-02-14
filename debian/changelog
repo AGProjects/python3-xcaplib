@@ -1,3 +1,19 @@
+python-xcaplib (1.2.2) unstable; urgency=medium
+
+  * Removed commented out variable in debian rules
+  * Explicitly use python2 in shebang lines
+  * Refactored setup.py for PEP-8 compliance
+  * Removed unused version_info
+  * Simplified MANIFEST.in
+  * Updated license and copyright years
+  * Increased debian compatibility level to 11
+  * Increased debian standards version to 4.5.0
+  * Added dh-python to Build-Depends
+  * Use pybuild as debian build system
+  * Raised minimum version dependency for python-application
+
+ -- Dan Pascu <dan@ag-projects.com>  Fri, 14 Feb 2020 12:48:49 +0200
+
 python-xcaplib (1.2.1) unstable; urgency=medium
 
   * Replaced deprecated function and fixed wrong order of arguments
