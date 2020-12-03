@@ -5,10 +5,10 @@
 __all__ = ['HTTPClient', 'HTTPResponse']
 
 
-import httplib
+import http.client
 import socket
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 
 
 class Address(str):
@@ -42,14 +42,14 @@ class HostCache(object):
 HostCache = HostCache()
 
 
-class HTTPConnection(httplib.HTTPConnection):
+class HTTPConnection(http.client.HTTPConnection):
     def connect(self):
         address = HostCache.get(self.host)
         self.sock = socket.create_connection((address, self.port), self.timeout) # self.source_address is only present in 2.7 and is not set by urllib2
         if hasattr(self, '_tunnel') and self._tunnel_host:
             self._tunnel()
 
-class HTTPSConnection(httplib.HTTPSConnection):
+class HTTPSConnection(http.client.HTTPSConnection):
     def connect(self):
         import ssl
         address = HostCache.get(self.host)
@@ -59,20 +59,20 @@ class HTTPSConnection(httplib.HTTPSConnection):
             self._tunnel()
         self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
 
-class HTTPHandler(urllib2.HTTPHandler):
+class HTTPHandler(urllib.request.HTTPHandler):
     def http_open(self, req):
         return self.do_open(HTTPConnection, req)
 
-class HTTPSHandler(urllib2.HTTPSHandler):
+class HTTPSHandler(urllib.request.HTTPSHandler):
     def https_open(self, req):
         return self.do_open(HTTPSConnection, req)
 
 
-class HTTPRequest(urllib2.Request):
+class HTTPRequest(urllib.request.Request):
     """Hack urllib2.Request to support PUT and DELETE methods."""
 
     def __init__(self, url, method="GET", data=None, headers={}, origin_req_host=None, unverifiable=False):
-        urllib2.Request.__init__(self, url, data, headers, origin_req_host, unverifiable)
+        urllib.request.Request.__init__(self, url, data, headers, origin_req_host, unverifiable)
         self.url = url
         self.method = method
 
@@ -95,7 +95,7 @@ class HTTPResponse(object):
 
     def __str__(self):
         result = "%s %s <%s>" % (self.status, self.reason, self.url)
-        for k, v in self.headers.items():
+        for k, v in list(self.headers.items()):
             result += '\n%s: %s' % (k, v)
         if self.body:
             result += '\n\n'
@@ -133,10 +133,10 @@ class HTTPClient(object):
         self.base_url = base_url
         if self.base_url[-1:] != '/':
             self.base_url += '/'
-        password_manager = urllib2.HTTPPasswordMgr()
+        password_manager = urllib.request.HTTPPasswordMgr()
         if username is not None is not password:
             password_manager.add_password(domain, self.base_url, username, password)
-        self.opener = urllib2.build_opener(HTTPHandler, HTTPSHandler, urllib2.HTTPDigestAuthHandler(password_manager), urllib2.HTTPBasicAuthHandler(password_manager))
+        self.opener = urllib.request.build_opener(HTTPHandler, HTTPSHandler, urllib.request.HTTPDigestAuthHandler(password_manager), urllib.request.HTTPBasicAuthHandler(password_manager))
 
     def request(self, method, path, headers=None, data=None, etag=None, etagnot=None, timeout=None):
         """Make HTTP request. Return HTTPResponse instance.
@@ -154,22 +154,22 @@ class HTTPClient(object):
             headers['If-None-Match'] = ('"%s"' % etagnot) if etagnot!='*' else '*'
         url = self.base_url+path
         req = HTTPRequest(url, method=method, headers=headers, data=data)
-        host, port = urllib.splitport(req.get_host())
+        host, port = urllib.parse.splitport(req.host)
         HostCache.lookup(host)
         try:
             response = self.opener.open(req, timeout=timeout)
-            if isinstance(response, urllib2.HTTPError):
+            if isinstance(response, urllib.error.HTTPError):
                 return HTTPResponse.from_HTTPError(response)
-            elif isinstance(response, urllib2.addinfourl):
+            elif isinstance(response, http.client.HTTPResponse):
                 return HTTPResponse.from_addinfourl(response)
             else:
                 raise RuntimeError('urllib2.open returned %r' % response)
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             # Workaround for bug in urllib2 which doesn't reset the retry count
             # when a negative, but different that 401 or 407, response is
             # received. -Luci
             if e.code not in (401, 407):
-                for handler in (handler for handler in self.opener.handlers if isinstance(handler, (urllib2.HTTPDigestAuthHandler, urllib2.ProxyDigestAuthHandler))):
+                for handler in (handler for handler in self.opener.handlers if isinstance(handler, (urllib.request.HTTPDigestAuthHandler, urllib.request.ProxyDigestAuthHandler))):
                     handler.reset_retry_count()
             return HTTPResponse.from_HTTPError(e)
         finally:

@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 from distutils.core import setup
 from xcaplib import __version__

@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 """
   %prog: Client for managing full or partial XML documents on XCAP servers (RFC 4825)
@@ -15,12 +15,12 @@ OPT_COMPLETE = '--print-completions'
 
 try:
     import os
-    import urllib2
-    from httplib import HTTPException
+    import urllib.request, urllib.error, urllib.parse
+    from http.client import HTTPException
     from lxml import etree
     import optparse
     import traceback
-    from StringIO import StringIO
+    from io import StringIO, BytesIO
     from twisted.python import log as twistedlog
     from application.configuration import ConfigFile, ConfigSection, ConfigSetting
 
@@ -56,8 +56,7 @@ app_by_root_tag = {
     'xcap-directory'        : 'org.openmobilealliance.xcap-directory',
     'xcap-caps'             : 'xcap-caps'}
 
-root_tags = ['/' + root_tag for root_tag in app_by_root_tag.keys()]
-del root_tag
+root_tags = ['/' + root_tag for root_tag in list(app_by_root_tag.keys())]
 
 update_actions = ['put', 'insert', 'replace']
 actions = ['get', 'delete'] + update_actions
@@ -155,12 +154,12 @@ def lxml_tag(tag):
 def get_app_by_input_root_tag(root_tag):
     return app_by_root_tag.get(lxml_tag(root_tag)[1])
 
-apps = app_by_root_tag.values() + ['test-app']
+apps = list(app_by_root_tag.values()) + ['test-app']
 
 class NullObserver(twistedlog.DefaultObserver):
     def _emit(self, eventDict):
         if eventDict['isError']:
-            if eventDict.has_key('failure'):
+            if 'failure' in eventDict:
                 text = eventDict['failure'].getTraceback()
             else:
                 text = ' '.join([str(m) for m in eventDict['message']]) + '\n'
@@ -304,7 +303,7 @@ def run_completion(option, raise_ex=False):
     finally:
         for x in result:
             log(x)
-            print x
+            print(x)
 
 def complete_xpath(options, app, selector, action):
     client = make_xcapclient(options)
@@ -362,7 +361,7 @@ def update_options_from_config(options):
         sys.exit('Section [%s] was not found in %s' % (get_account_section(options.account_name), CONFIG_FILE))
 
     if default_options is not None:
-        for key, value in default_options.iteritems():
+        for key, value in default_options.items():
             if not getattr(options, key, None):
                 setattr(options, key, value)
 
@@ -392,7 +391,7 @@ def parse_args():
     options.input_data = None
 
     if options.input_filename is not None:
-        options.input_data = file(options.input_filename).read()
+        options.input_data = open(options.input_filename, 'rb').read()
     elif action in update_actions:
         if interactive():
             sys.stderr.write('Reading PUT body from stdin. Type CTRL-D when done\n')
@@ -417,7 +416,7 @@ def parse_args():
 
     if not options.app:
         if options.input_data is not None:
-            root_tag = xpath_completion.get_xml_info(StringIO(options.input_data))[0]
+            root_tag = xpath_completion.get_xml_info(BytesIO(options.input_data))[0]
             if root_tag is None:
                 sys.exit('Please specify --app. Cannot extract root tag from document %r.' % \
                          (options.input_filename or '<stdin'))
@@ -449,9 +448,9 @@ def write_content_type(type):
     sys.stderr.write('content-type: %s\n' % type)
 
 def write_body(options, data):
-    parsed_data = etree.parse(StringIO(data))
+    parsed_data = etree.parse(BytesIO(data))
     data = etree.tostring(parsed_data, pretty_print=True)
-    options.output_file.write(data)
+    options.output_file.write(str(data, 'utf-8'))
     options.output_file.flush()
     if options.output_filename: # i.e. not stdout
         sys.stderr.write('%s bytes saved to %s\n' % (len(data), options.output_filename))
@@ -517,12 +516,12 @@ def main():
 
     try:
         result = client_request(client, action, options, node_selector)
-    except (urllib2.URLError, HTTPException), ex:
+    except (urllib.error.URLError, HTTPException) as ex:
         sys.exit('FATAL: %s: %s' % (type(ex).__name__, ex))
     if result.status==401 and not options.password and interactive():
         authreq = result.headers.get('www-authenticate')
         if authreq:
-            mo = urllib2.AbstractBasicAuthHandler.rx.search(authreq)
+            mo = urllib.request.AbstractBasicAuthHandler.rx.search(authreq)
             if mo:
                 realm = mo.groups()[-1]
                 #sys.stderr.write('Server requested authentication, but no password was provided.\n')

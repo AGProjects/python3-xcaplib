@@ -2,7 +2,7 @@
 """Extends standard socket with "dump traffic" feature"""
 
 import sys
-from socket import _realsocket
+from socket import socket as _realsocket
 
 LOG_FILE = sys.stderr
 

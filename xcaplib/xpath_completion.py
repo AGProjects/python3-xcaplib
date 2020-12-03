@@ -1,6 +1,6 @@
 
 from lxml import etree
-from StringIO import StringIO
+from io import StringIO
 from xml.sax.saxutils import quoteattr
 
 __all__ = ['enum_paths_get',
@@ -50,7 +50,8 @@ def fix_namespace_prefix(selector, prefix = 'default'):
             steps.append(prefix + ':' + step)
     return '/'.join(steps)
 
-def path_element((prefix, name)):
+def path_element(prefix_name):
+    (prefix, name) = prefix_name
     if prefix:
         return prefix + ':' + name
     else:
@@ -67,7 +68,7 @@ def get_parent(selector_start):
     return selector_start[:x]
 
 def calc_prefixes(xml):
-    return dict((v, k) for (k, v) in xml.getroot().nsmap.iteritems())
+    return dict((v, k) for (k, v) in xml.getroot().nsmap.items())
 
 def xpath(xml, parent):
     namespaces = xml.getroot().nsmap.copy()
@@ -91,8 +92,8 @@ def enumerate_paths(element, prefixes):
 
     context = etree.iterwalk(element, events=("start", "end"))
     it = iter(context)
-    the_element = it.next()
-    for (k, v) in the_element[1].attrib.items():
+    the_element = next(it)
+    for (k, v) in list(the_element[1].attrib.items()):
         add(('parent-attr', k))
 
     skip = 0
@@ -116,7 +117,7 @@ def enumerate_paths(element, prefixes):
                 indices[el]+=1
                 paths.append((el, None, None))
                 paths.append((el, indices[el], None))
-                for (k, v) in elem.attrib.items():
+                for (k, v) in list(elem.attrib.items()):
                     paths.append((el, None, (k, v)))
             else:
                 has_children = True
@@ -137,7 +138,7 @@ def enumerate_paths(element, prefixes):
 
 def discard_longer(added, indices, star_index):
     "if there's exists both entry and entry[1] and no more entries, discard the latter"
-    for (tag, index) in indices.iteritems():
+    for (tag, index) in indices.items():
         if index == 1:
             added.discard(('element', tag, 1, None, True))
             added.discard(('element', tag, 1, None, False))
@@ -148,7 +149,7 @@ def discard_longer(added, indices, star_index):
 
 def discard_ambigous(added, indices, star_index):
     "if there're entry[1], entry[2], etc, discard entry as ambigous"
-    for (tag, index) in indices.iteritems():
+    for (tag, index) in indices.items():
         if index > 1:
             added.discard(('element', tag, None, None, True))
             added.discard(('element', tag, None, None, False))
@@ -265,7 +266,7 @@ def enum_paths_insert(document, selector_start, my_tag, my_attrs):
             if tag == my_tag or my_tag is None:
                 max_position = max(max_position, position or 1)
                 if not att_test:
-                    for (k, v) in my_attrs.items():
+                    for (k, v) in list(my_attrs.items()):
                         res.add(element2xpath(parent, tag, position, (k, v)))
                 else:
                     k, v = att_test
@@ -274,7 +275,7 @@ def enum_paths_insert(document, selector_start, my_tag, my_attrs):
                         del my_attrs[k]
                         return enum_paths_insert(document, selector_start, my_tag, my_attrs)
     if parent and my_tag:
-        for (k, v) in my_attrs.items():
+        for (k, v) in list(my_attrs.items()):
             res.add(element2xpath(parent, my_tag, None, (k, v)))
             res.add(element2xpath(parent, my_tag, max_position+1, (k, v)))
     return res

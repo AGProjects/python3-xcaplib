@@ -16,11 +16,11 @@ class HTTPSConnection(httplib.HTTPSConnection):
         ssl_sock = ssl.sslwrap_simple(sock, self.key_file, self.cert_file)
         self.sock = httplib.FakeSocket(sock, ssl_sock)
 
-class HTTPHandler(urllib2.HTTPHandler):
+class HTTPHandler(urllib.request.HTTPHandler):
     def http_open(self, req):
         return self.do_open(HTTPConnection, req)
 
-class HTTPSHandler(urllib2.HTTPSHandler):
+class HTTPSHandler(urllib.request.HTTPSHandler):
     def https_open(self, req):
         return self.do_open(HTTPSConnection, req)
 
@@ -30,10 +30,10 @@ class HTTPClient(httpclient.HTTPClient):
         self.base_url = base_url
         if self.base_url[-1:] != '/':
             self.base_url += '/'
-        password_manager = urllib2.HTTPPasswordMgr()
+        password_manager = urllib.request.HTTPPasswordMgr()
         if username is not None is not password:
             password_manager.add_password(domain, self.base_url, username, password)
-        self.opener = urllib2.build_opener(HTTPHandler, HTTPSHandler, urllib2.HTTPDigestAuthHandler(password_manager), urllib2.HTTPBasicAuthHandler(password_manager))
+        self.opener = urllib.request.build_opener(HTTPHandler, HTTPSHandler, urllib.request.HTTPDigestAuthHandler(password_manager), urllib.request.HTTPBasicAuthHandler(password_manager))
 
 
 class XCAPClient(client.XCAPClient):
