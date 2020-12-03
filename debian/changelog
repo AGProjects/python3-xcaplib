@@ -1,3 +1,9 @@
+python3-xcaplib (2.0.0) unstable; urgency=medium
+
+  * Migrate to version 3
+
+ -- Adrian Georgescu <ag@ag-projects.com>  Thu, 03 Dec 2020 12:38:18 +0000
+
 python-xcaplib (1.2.2) unstable; urgency=medium
 
   * Removed commented out variable in debian rules

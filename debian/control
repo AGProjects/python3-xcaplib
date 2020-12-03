@@ -1,14 +1,15 @@
-Source: python-xcaplib
+Source: python3-xcaplib
 Section: python
 Priority: optional
-Maintainer: Dan Pascu <dan@ag-projects.com>
-Build-Depends: debhelper (>= 11), dh-python, python (>= 2.7)
+Maintainer: Adrian Georgescu <ag@ag-projects.com>
+Build-Depends: debhelper (>= 11), dh-python, python3
 Standards-Version: 4.5.0
+X-Python3-Version: >= 3.7
 
-Package: python-xcaplib
+Package: python3-xcaplib
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-application (>= 2.0.0), python-lxml
-Recommends: python-eventlib
+Depends: ${python3:Depends}, ${misc:Depends}, python3-application, python3-lxml
+Recommends: python3-eventlib
 Description: Python library for managing XML documents on XCAP server
  XCAP protocol allows a client to read, write, and modify application
  configuration data stored in XML format on a server. XCAP maps XML document
