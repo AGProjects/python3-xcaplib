@@ -2,6 +2,8 @@
 from eventlib.green import socket, ssl, httplib, urllib2
 from xcaplib import httpclient
 from xcaplib import client
+import urllib
+import http
 
 
 class HTTPConnection(httplib.HTTPConnection):
@@ -22,7 +24,7 @@ class HTTPHandler(urllib.request.HTTPHandler):
 
 class HTTPSHandler(urllib.request.HTTPSHandler):
     def https_open(self, req):
-        return self.do_open(HTTPSConnection, req)
+        return self.do_open(http.client.HTTPSConnection, req)
 
 
 class HTTPClient(httpclient.HTTPClient):

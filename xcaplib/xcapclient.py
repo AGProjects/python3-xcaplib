@@ -129,6 +129,8 @@ def setup_parser_request(parser):
     parser.add_option('--etag', help="perform a conditional operation", metavar='ETAG')
     parser.add_option('--add-header', dest='headers',
                       action='append', default=[], help=optparse.SUPPRESS_HELP)
+    parser.add_option("--eventlib", dest='eventlib_enable',
+                      help="Enables non-blocking mode using eventlib library")
     parser.add_option("-i", dest='input_filename',
                       help="source file for the PUT request; default is <stdin>")
     parser.add_option("-o", dest='output_filename',
@@ -366,7 +368,11 @@ def update_options_from_config(options):
                 setattr(options, key, value)
 
 def parse_args():
-    argv = sys.argv[1:]
+    argv = None
+    if "--eventlib" in sys.argv[1:]:
+        argv = sys.argv[2:]
+    else:
+        argv = sys.argv[1:]
 
     if not argv:
         sys.exit('Type %s -h for help.' % sys.argv[0])
@@ -496,7 +502,7 @@ def get_exit_code(http_error):
         return 3
 
 def main():
-    if sys.argv[0].endswith('-eventlib'):
+    if "--eventlib" in sys.argv[1:]:
         from xcaplib.green import XCAPClient as client_class
     else:
         client_class = XCAPClient
