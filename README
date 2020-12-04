@@ -174,3 +174,8 @@ sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
   etag: "bfbd38bed7163dd19e6e110d0dfa0876"
 
   This will shift Bill's entry to the second position.
+
+3. Other examples
+
+For more examples see http://openxcap.org/test-suite/
+
