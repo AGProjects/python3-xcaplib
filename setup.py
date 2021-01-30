@@ -4,7 +4,7 @@ from distutils.core import setup
 from xcaplib import __version__
 
 setup(
-    name='python-xcaplib',
+    name='python3-xcaplib',
     version=__version__,
 
     description='Client for managing full or partial XML documents on XCAP servers (RFC 4825)',
@@ -24,5 +24,5 @@ setup(
     ],
 
     packages=['xcaplib'],
-    scripts=['xcapclient']
+    scripts=['xcapclient3']
 )

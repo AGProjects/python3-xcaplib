@@ -4,7 +4,7 @@ include TODO
 include MANIFEST.in
 
 include xcapclient.ini.sample
-include bash_completion.d/xcapclient
+include bash_completion.d/xcapclient3
 
 include debian/changelog
 include debian/compat
