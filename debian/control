@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Adrian Georgescu <ag@ag-projects.com>
 Build-Depends: debhelper (>= 11), dh-python, python3
 Standards-Version: 4.5.0
-X-Python3-Version: >= 3.7
+X-Python3-Version: >= 3.6.5
 
 Package: python3-xcaplib
 Architecture: all

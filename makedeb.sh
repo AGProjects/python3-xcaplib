@@ -10,7 +10,7 @@ cd dist
 
 tar zxvf *.tar.gz
 
-cd python-xcaplib-?.?.?
+cd python3-xcaplib-?.?.?
 
 debuild --no-sign
 
