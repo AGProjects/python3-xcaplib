@@ -60,17 +60,22 @@ class Resource(str):
         except AttributeError:
             return False
 
+
 class Document(Resource):
     content_type = None # depends on the application
+
 
 class Element(Resource):
     content_type = 'application/xcap-el+xml'
 
+
 class AttributeValue(Resource):
     content_type = 'application/xcap-att+xml'
 
+
 class NSBindings(Resource):
     content_type = 'application/xcap-ns+xml'
+
 
 def get_path(xcap_user_id, application, node, globaltree=False, filename=None):
     if filename is None:
@@ -85,8 +90,8 @@ def get_path(xcap_user_id, application, node, globaltree=False, filename=None):
         path += '~~' + node
     return path
 
-class XCAPClientBase(object):
 
+class XCAPClientBase(object):
     HTTPClient = HTTPClient
 
     def __init__(self, root, sip_address, password=None, timeout=None):
@@ -113,6 +118,7 @@ class XCAPClientBase(object):
     def _get(self, application, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
         path = get_path('sip:'+self.sip_address, application, node, **kwargs)
+        #print('XCAP GET %s%s' % (self.root, path))
         return self.client.request('GET', path, headers=headers, etag=etag, etagnot=etagnot, timeout=self.timeout)
 
     def _put(self, application, resource, node=None, etag=None, etagnot=None, headers=None, **kwargs):
@@ -122,20 +128,24 @@ class XCAPClientBase(object):
             content_type = Resource.get_content_type_for_node(node)
             if content_type:
                 headers['Content-Type'] = content_type
+        #print('XCAP PUT %s%s' % (self.root, path))
         return self.client.request('PUT', path, headers, resource, etag=etag, etagnot=etagnot, timeout=self.timeout)
 
     def _delete(self, application, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
         path = get_path('sip:'+self.sip_address, application, node, **kwargs)
+        #print('XCAP DELETE %s%s' % (self.root, path))
         return self.client.request('DELETE', path, etag=etag, etagnot=etagnot, headers=headers, timeout=self.timeout)
 
+
 def make_resource_from_httpresponse(response):
+    content_type = response.headers.get('content-type')
     if 200 <= response.status <= 299:
-        content_type = response.headers.get('content-type')
         klass = Resource.get_class_for_type(content_type)
         return klass(response.body, response.etag, response)
     else:
         raise HTTPError(response)
+
 
 class XCAPClient(XCAPClientBase):
 

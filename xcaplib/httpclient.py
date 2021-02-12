@@ -10,6 +10,8 @@ import socket
 import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 class Address(str):
     def __init__(self, value):
@@ -51,7 +53,6 @@ class HTTPConnection(http.client.HTTPConnection):
 
 class HTTPSConnection(http.client.HTTPSConnection):
     def connect(self):
-        import ssl
         address = HostCache.get(self.host)
         sock = socket.create_connection((address, self.port), self.timeout) # self.source_address is only present in 2.7 and is not set by urllib2
         if hasattr(self, '_tunnel') and self._tunnel_host:
@@ -72,6 +73,7 @@ class HTTPRequest(urllib.request.Request):
     """Hack urllib2.Request to support PUT and DELETE methods."""
 
     def __init__(self, url, method="GET", data=None, headers={}, origin_req_host=None, unverifiable=False):
+        # Python3 change
         urllib.request.Request.__init__(self, url, data, headers, origin_req_host, unverifiable)
         self.url = url
         self.method = method
@@ -91,7 +93,8 @@ class HTTPResponse(object):
         self.status = status
         self.reason = reason
         self.headers = headers if headers is not None else {}
-        self.body = body
+        # Python3 change
+        self.body = body.decode() if body else None
 
     def __str__(self):
         result = "%s %s <%s>" % (self.status, self.reason, self.url)
@@ -115,11 +118,12 @@ class HTTPResponse(object):
 
     @classmethod
     def from_HTTPError(cls, response):
+        body = ''
         if response.fp is not None:
             length = int(response.hdrs.get('content-length') or -1)
-            body = response.fp.read(length)
-        else:
-            body = ''
+            if length > 0:
+                body = response.fp.read(length)
+
         return cls(response.filename, response.code, response.msg, response.hdrs, body)
 
     @classmethod
@@ -144,18 +148,24 @@ class HTTPClient(object):
         Will never raise urllib2.HTTPError, but may raise other exceptions, such
         as urllib2.URLError or httplib.HTTPException
         """
+        
         if path[:1]=='/':
             path = path[1:]
+
         if headers is None:
             headers = {}
+
         if etag is not None:
             headers['If-Match'] = '"%s"' % etag if etag!='*' else '*' # XXX use quoteString instead?
+
         if etagnot is not None:
             headers['If-None-Match'] = ('"%s"' % etagnot) if etagnot!='*' else '*'
+
         url = self.base_url+path
         req = HTTPRequest(url, method=method, headers=headers, data=data)
         host, port = urllib.parse.splitport(req.host)
         HostCache.lookup(host)
+
         try:
             response = self.opener.open(req, timeout=timeout)
             if isinstance(response, urllib.error.HTTPError):
