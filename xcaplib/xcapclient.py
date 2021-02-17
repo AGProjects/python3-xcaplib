@@ -541,7 +541,7 @@ def main():
         write_content_type(result.headers['content-type'])
     if result.body:
         write_content_length(len(result.body)) # print content-length header instead, otherwise confusing
-        write_body(options, result.body)
+        write_body(options, result.body.encode())
     sys.exit(get_exit_code(result.status))
 
 if __name__ == '__main__':
