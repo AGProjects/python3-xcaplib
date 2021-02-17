@@ -99,7 +99,7 @@ sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
 
   To a document, for example, presence rules:
 
-  xcapclient -i pres-rules.xml put
+  xcapclient3 -i pres-rules.xml put
 
   On success, the command prints '201 Created' if a new document was created on the
   server or '200 OK' if an existing document was replaced. You should something like this:
@@ -110,36 +110,40 @@ sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
 
   b. GET
 
-  xcapclient --app resource-lists get
+  xcapclient3 --app resource-lists get
 
   or
 
-  xcapclient --app pres-rules get
+  xcapclient3 --app pres-rules get
+  
+  or 
+
+  xcapclient3 --app org.openmobilealliance.pres-rules get
 
   or
 
-  xcapclient --app rls-services get
+  xcapclient3 --app rls-services get
 
   This will print the document you've just put, along with its tag.
 
   or
   
-  xcapclient --app xcap-caps get
+  xcapclient3 --app xcap-caps get
 
   will print the capabilities of the XCAP server.	
 
 
   c. DELETE
 
-  xcapclient --app resource-lists delete
+  xcapclient3 --app resource-lists delete
 
   and
 
-  xcapclient --app pres-rules delete
+  xcapclient3 --app pres-rules delete
 
   and
 
-  xcapclient --app rls-services  delete
+  xcapclient3 --app rls-services  delete
 
 
 2. Operating on XML elements (partial document handling)
@@ -151,7 +155,7 @@ sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
 
   Let's put the document in section 1 again to server, so we can fetch some elements from it.
 
-  xcapclient --app resource-lists get '/resource-lists/list[@name="friends"]/entry[1]/display-name'
+  xcapclient3 --app resource-lists get '/resource-lists/list[@name="friends"]/entry[1]/display-name'
 
   etag: "856bdac9012ee28e46cebb81e51ac2a0"
   <display-name>Bill Doe</display-name>
@@ -163,12 +167,12 @@ sudo cp bash_completion.d/xcapclient /etc/bash_completion.d/
   retrieving the element but do PUT instead. For example if we want to fix
   Bill's display name:
 
-  xcapclient -i bill_display_name_fixed.xml put '/resource-lists/list[@name="friends"]/entry[1]/display-name'
+  xcapclient3 -i bill_display_name_fixed.xml put '/resource-lists/list[@name="friends"]/entry[1]/display-name'
 
   To insert a new element one must construct a node selector that doesn't
   point to an existing element.
 
-  xcapclient -i alice.xml put '/resource-lists/list[@name="friends"]/entry[1][@uri="sip:alice@example.com"]'
+  xcapclient3 -i alice.xml put '/resource-lists/list[@name="friends"]/entry[1][@uri="sip:alice@example.com"]'
 
   201 Created
   etag: "bfbd38bed7163dd19e6e110d0dfa0876"
