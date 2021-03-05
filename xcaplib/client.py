@@ -118,7 +118,7 @@ class XCAPClientBase(object):
     def _get(self, application, node=None, etag=None, etagnot=None, headers=None, **kwargs):
         headers = self._update_headers(headers)
         path = get_path('sip:'+self.sip_address, application, node, **kwargs)
-        #print('XCAP GET %s%s' % (self.root, path))
+        #print('XCAP GET %s%s with etag=%s etagnot=%s' % (self.root, path, etag, etagnot))
         return self.client.request('GET', path, headers=headers, etag=etag, etagnot=etagnot, timeout=self.timeout)
 
     def _put(self, application, resource, node=None, etag=None, etagnot=None, headers=None, **kwargs):
@@ -128,7 +128,7 @@ class XCAPClientBase(object):
             content_type = Resource.get_content_type_for_node(node)
             if content_type:
                 headers['Content-Type'] = content_type
-        #print('XCAP PUT %s%s' % (self.root, path))
+        #print('XCAP PUT %s%s with etag=%s etagnot=%s' % (self.root, path, etag, etagnot))
         return self.client.request('PUT', path, headers, resource, etag=etag, etagnot=etagnot, timeout=self.timeout)
 
     def _delete(self, application, node=None, etag=None, etagnot=None, headers=None, **kwargs):
