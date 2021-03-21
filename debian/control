@@ -8,7 +8,7 @@ X-Python3-Version: >= 3.6.5
 
 Package: python3-xcaplib
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-application, python3-lxml
+Depends: ${python3:Depends}, ${misc:Depends}, python3-application, python3-lxml, python3-gevent
 Recommends: python3-eventlib
 Description: Python library for managing XML documents on XCAP server
  XCAP protocol allows a client to read, write, and modify application
