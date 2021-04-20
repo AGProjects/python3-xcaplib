@@ -522,7 +522,7 @@ def main():
 
     try:
         result = client_request(client, action, options, node_selector)
-    except (urllib.error.URLError, HTTPException) as ex:
+    except (urllib.error.URLError, HTTPException, TimeoutError) as ex:
         sys.exit('FATAL: %s: %s' % (type(ex).__name__, ex))
     if result.status==401 and not options.password and interactive():
         authreq = result.headers.get('www-authenticate')
