@@ -1,3 +1,17 @@
+python3-xcaplib (2.0.1) unstable; urgency=medium
+
+  * Capture TimeoutError
+  * Use gevent for non-blocking operations
+  * Added more debug info
+  * Fixed decoding payload
+  * Update docs
+  * Various fixes
+  * Use system env python3 path
+  * Debian build fixes
+  * Debian package fixes
+
+ -- Adrian Georgescu <ag@ag-projects.com>  Wed, 15 Sep 2021 09:55:29 -0300
+
 python3-xcaplib (2.0.0) unstable; urgency=medium
 
   * Migrate to version 3
