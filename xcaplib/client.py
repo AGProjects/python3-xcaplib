@@ -1,8 +1,11 @@
-import gevent
-from gevent import monkey
-
-monkey.patch_socket()
-monkey.patch_ssl()
+try:
+    import gevent
+    from gevent import monkey
+except ImportError:
+    pass
+else:
+    monkey.patch_socket()
+    monkey.patch_ssl()
     
 from xcaplib import __version__
 from xcaplib.httpclient import HTTPClient
