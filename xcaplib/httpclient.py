@@ -11,7 +11,17 @@ import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
 
 import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
+
+def disable_ssl_verification():
+    # Create an SSL context that disables SSL verification
+    context = ssl.create_default_context()
+    context.check_hostname = False  # Disable hostname verification
+    context.verify_mode = ssl.CERT_NONE  # Disable certificate verification
+
+    # Set this as the default HTTPS context for all HTTPS connections
+    ssl._create_default_https_context = lambda: context
+
+disable_ssl_verification()
 
 class Address(str):
     def __init__(self, value):
@@ -58,7 +68,7 @@ class HTTPSConnection(http.client.HTTPSConnection):
         if hasattr(self, '_tunnel') and self._tunnel_host:
             self.sock = sock
             self._tunnel()
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
 
 class HTTPHandler(urllib.request.HTTPHandler):
     def http_open(self, req):
