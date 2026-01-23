@@ -1,3 +1,11 @@
+python3-xcaplib (2.0.2) unstable; urgency=medium
+
+  * Added python 3.12/3.13 compatibility
+  * Don't use gevent if is not available
+  * Fixed minumum python version dependency for Debian
+
+ -- Tijmen de Mes <tijmen@ag-projects.com>  Fri, 23 Jan 2026 16:15:55 +0100
+
 python3-xcaplib (2.0.1) unstable; urgency=medium
 
   * Capture TimeoutError
