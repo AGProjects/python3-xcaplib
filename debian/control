@@ -2,6 +2,7 @@ Source: python3-xcaplib
 Section: python
 Priority: optional
 Maintainer: Adrian Georgescu <ag@ag-projects.com>
+Uploaders: Tijmen de Mes <tijmen@ag-projects.com>
 Build-Depends: debhelper (>= 11), dh-python, python3
 Standards-Version: 4.5.0
 X-Python3-Version: >= 3.6
