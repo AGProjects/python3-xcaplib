@@ -7,6 +7,7 @@ __all__ = ['HTTPClient', 'HTTPResponse']
 
 import http.client
 import socket
+import threading
 import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
 
@@ -30,26 +31,34 @@ class Address(str):
 class HostCache(object):
     def __init__(self):
         self.hostmap = {}
+        self.lock = threading.Lock()
 
     def get(self, host):
         return str(self.hostmap[host])
 
     def lookup(self, host):
+        # the name resolution is done outside the lock, so a slow lookup for one
+        # host does not hold up requests (possibly from other threads) to others
+        with self.lock:
+            address = self.hostmap.get(host)
+            if address is not None:
+                address.refcount += 1
+                return str(address)
         try:
-            address = self.hostmap[host]
-        except KeyError:
-            try:
-                address = self.hostmap.setdefault(host, Address(next(sa[0] for family, socktype, proto, cname, sa in socket.getaddrinfo(host, 0, 0, 0, socket.SOL_TCP))))
-            except socket.gaierror:
-                address = self.hostmap.setdefault(host, Address(host))
-        address.refcount += 1
-        return str(address)
+            resolved = Address(next(sa[0] for family, socktype, proto, cname, sa in socket.getaddrinfo(host, 0, 0, 0, socket.SOL_TCP)))
+        except socket.gaierror:
+            resolved = Address(host)
+        with self.lock:
+            address = self.hostmap.setdefault(host, resolved)
+            address.refcount += 1
+            return str(address)
 
     def release(self, host):
-        address = self.hostmap[host]
-        address.refcount -= 1
-        if address.refcount == 0:
-            del self.hostmap[host]
+        with self.lock:
+            address = self.hostmap[host]
+            address.refcount -= 1
+            if address.refcount == 0:
+                del self.hostmap[host]
 
 HostCache = HostCache()
 

@@ -1,41 +1,55 @@
 
-from eventlib.green import socket, ssl, httplib, urllib2
+"""XCAP client for use from eventlib green threads.
+
+The HTTP(S) requests themselves are done with the standard library (the same
+code as the non-green client) in a worker thread, while the calling green
+thread waits for the result. This way a slow DNS lookup, TCP connect, TLS
+handshake or server response never blocks the eventlib hub (which, when using
+the twisted hub, is the twisted reactor thread and stalls everything else).
+"""
+
+import threading
+
+from eventlib.api import get_hub
+
 from xcaplib import httpclient
 from xcaplib import client
-import urllib
-import http
 
 
-class HTTPConnection(httplib.HTTPConnection):
-    def connect(self):
-        address = httpclient.HostCache.get(self.host)
-        self.sock = socket.create_connection((address, self.port), self.timeout)
+__all__ = ['HTTPClient', 'XCAPClient']
 
-class HTTPSConnection(httplib.HTTPSConnection):
-    def connect(self):
-        address = httpclient.HostCache.get(self.host)
-        sock = socket.create_connection((address, self.port), self.timeout)
-        ssl_sock = ssl.sslwrap_simple(sock, self.key_file, self.cert_file)
-        self.sock = httplib.FakeSocket(sock, ssl_sock)
 
-class HTTPHandler(urllib.request.HTTPHandler):
-    def http_open(self, req):
-        return self.do_open(HTTPConnection, req)
+# Used when the caller does not specify a timeout, so that a request can never
+# hang forever and hold a worker thread and the client's request lock.
+DEFAULT_TIMEOUT = 30
 
-class HTTPSHandler(urllib.request.HTTPSHandler):
-    def https_open(self, req):
-        return self.do_open(http.client.HTTPSConnection, req)
+
+def _call_in_thread(func, *args, **kw):
+    """Run func in a worker thread and wait for its result from a green thread"""
+    if getattr(get_hub(), 'uses_twisted_reactor', False):
+        from twisted.internet.threads import deferToThread
+        from eventlib.twistedutil import block_on
+        return block_on(deferToThread(func, *args, **kw))
+    else:
+        from eventlib import tpool
+        return tpool.execute(func, *args, **kw)
 
 
 class HTTPClient(httpclient.HTTPClient):
-    def __init__(self, base_url, username, domain, password=None):
-        self.base_url = base_url
-        if self.base_url[-1:] != '/':
-            self.base_url += '/'
-        password_manager = urllib.request.HTTPPasswordMgr()
-        if username is not None is not password:
-            password_manager.add_password(domain, self.base_url, username, password)
-        self.opener = urllib.request.build_opener(HTTPHandler, HTTPSHandler, urllib.request.HTTPDigestAuthHandler(password_manager), urllib.request.HTTPBasicAuthHandler(password_manager))
+    def __init__(self, *args, **kw):
+        super(HTTPClient, self).__init__(*args, **kw)
+        # The opener (its digest authentication handler in particular) is not
+        # thread safe, so requests made through the same client are serialized.
+        self._request_lock = threading.Lock()
+
+    def _locked_request(self, *args, **kw):
+        with self._request_lock:
+            return super(HTTPClient, self).request(*args, **kw)
+
+    def request(self, method, path, headers=None, data=None, etag=None, etagnot=None, timeout=None):
+        if timeout is None:
+            timeout = DEFAULT_TIMEOUT
+        return _call_in_thread(self._locked_request, method, path, headers=headers, data=data, etag=etag, etagnot=etagnot, timeout=timeout)
 
 
 class XCAPClient(client.XCAPClient):
