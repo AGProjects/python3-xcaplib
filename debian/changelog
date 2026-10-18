@@ -1,3 +1,14 @@
+python3-xcaplib (2.0.3) unstable; urgency=medium
+
+  * Do not monkey-patch socket and ssl with gevent at import. Doing so
+    changed them for the whole process that imported xcaplib: in SIP SIMPLE
+    SDK based applications a request made in a green thread of the twisted
+    reactor ran gevent's hub there and stopped twisted. The client now
+    blocks; green callers run it in a thread (sipsimple.account.xcap does)
+  * Dropped the dependency on python3-gevent
+
+ -- Adrian Georgescu <ag@ag-projects.com>  Sun, 18 Oct 2026 11:14:05 -0300
+
 python3-xcaplib (2.0.2) unstable; urgency=medium
 
   * Added python 3.12/3.13 compatibility
